@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Dashboard &middot; Bhakti Sebatung Academy</title>
+    <script src="/assets/js/core/head.js"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20260916-14" />
+  </head>
+  <body>
+    <div class="shell">
+      <div id="topbar-root"></div>
+
+      <main class="view" id="mainContent" tabindex="-1">
+        <div class="view-head" id="viewHead"></div>
+
+        <div class="bento">
+          <div class="ring-tile">
+            <div class="ring-wrap">
+              <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="#2A323F" stroke-width="12"></circle>
+                <circle id="ringProgress" cx="60" cy="60" r="52" fill="none" stroke="#E98A2E" stroke-width="12" stroke-dasharray="0 327" stroke-linecap="round"></circle>
+              </svg>
+              <div class="ring-num"><b id="ringPct">&ndash;</b><span>Persen Hadir</span></div>
+            </div>
+            <div class="ring-info">
+              <div class="label">Hari Ini</div>
+              <h3 id="ringHeadline">Memuat data&hellip;</h3>
+              <p id="todayDateLabel">&nbsp;</p>
+            </div>
+          </div>
+
+          <div class="num-tile tone-teal">
+            <div class="label">Hadir</div>
+            <div class="num" id="statHadir">&ndash;</div>
+            <div class="foot">Tepat waktu hari ini</div>
+          </div>
+          <div class="num-tile tone-red">
+            <div class="label">Telat</div>
+            <div class="num" id="statTelat">&ndash;</div>
+            <div class="foot">Lewat toleransi jadwal</div>
+          </div>
+          <div class="num-tile tone-hardwood">
+            <div class="label">Belum Presensi</div>
+            <div class="num" id="statBelum">&ndash;</div>
+            <div class="foot" id="statTotalFoot">Dari total siswa aktif</div>
+          </div>
+        </div>
+
+        <div class="card section-gap">
+          <div class="card-head">
+            <div>
+              <h2>Iuran Bulan Ini</h2>
+              <p class="desc" id="iuranCardDesc">Memuat data&hellip;</p>
+            </div>
+            <a href="/iuran/" class="btn btn-primary btn-sm">Kelola Iuran</a>
+          </div>
+          <div class="card-body">
+            <div class="stats-grid">
+              <div class="num-tile tone-teal">
+                <div class="label">Lunas</div>
+                <div class="num" id="iuranLunas">&ndash;</div>
+              </div>
+              <div class="num-tile tone-red">
+                <div class="label">Belum Bayar</div>
+                <div class="num" id="iuranBelum">&ndash;</div>
+              </div>
+              <div class="num-tile tone-orange">
+                <div class="label">Terkumpul</div>
+                <div class="num num-currency" id="iuranTerkumpul">&ndash;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card section-gap">
+          <div class="card-head">
+            <div>
+              <h2>Tren 7 Hari Terakhir</h2>
+              <p class="desc">Jumlah scan hadir &amp; telat per hari</p>
+            </div>
+          </div>
+          <div class="card-body" id="trendChart" style="min-height: 170px">
+            <div class="skel" style="height: 150px; width: 100%"></div>
+          </div>
+        </div>
+
+        <div class="card data-card">
+          <div class="card-head">
+            <h2>Presensi Hari Ini</h2>
+            <a href="/scan/" class="btn btn-primary btn-sm">Scan Sekarang</a>
+          </div>
+          <div class="card-body pad-0">
+            <p class="table-hint no-print">Geser tabel untuk melihat kolom lainnya.</p>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Tabel presensi hari ini">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col">Nama Siswa</th>
+                    <th scope="col" style="display: none">Kelompok</th>
+                    <th scope="col">Jam</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="todayTableBody"></tbody>
+              </table>
+            </div>
+            <div id="todayEmpty" class="empty-state hidden">
+              <h3>Belum ada presensi</h3>
+              <p>Data akan muncul di sini begitu ada siswa yang scan kode QR.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div id="tabbar-root"></div>
+    </div>
+
+    <script src="/assets/js/core/config.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/api.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/auth.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/ui.js?v=20260916-13" defer></script>
+    <script src="/assets/js/pages/dashboard.js?v=20260916-2" defer></script>
+  </body>
+</html>

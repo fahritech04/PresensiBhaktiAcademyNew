@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Data Siswa &middot; Bhakti Sebatung Academy</title>
+    <script src="/assets/js/core/head.js"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20260916-14" />
+  </head>
+  <body>
+    <div class="shell">
+      <div id="topbar-root"></div>
+
+      <main class="view" id="mainContent" tabindex="-1">
+        <div class="view-head" id="viewHead"></div>
+
+        <div class="card data-card">
+          <div class="card-body">
+            <div class="toolbar filter-toolbar">
+              <div class="search-input">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" class="input" id="searchInput" aria-label="Cari siswa berdasarkan nama atau kode QR" placeholder="Cari nama atau kode QR..." />
+              </div>
+              <select class="input" id="filterKelompok" aria-label="Filter kelompok latihan" style="max-width: 200px; display: none">
+                <option value="">Semua Kelompok</option>
+              </select>
+              <select class="input" id="filterStatus" aria-label="Filter status keanggotaan" style="max-width: 160px">
+                <option value="">Semua Status</option>
+                <option value="Aktif">Aktif</option>
+                <option value="Nonaktif">Nonaktif</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body pad-0">
+            <p class="table-hint no-print">Geser tabel untuk melihat kolom lainnya.</p>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Tabel data siswa">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col">Kode QR</th>
+                    <th scope="col">Nama Siswa</th>
+                    <th scope="col" style="display: none">Kelompok</th>
+                    <th scope="col">No. HP Orang Tua</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            <div id="emptyState" class="empty-state hidden">
+              <h3>Belum ada data siswa</h3>
+              <p>Klik "Tambah Siswa" untuk mendaftarkan anggota baru.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div id="tabbar-root"></div>
+    </div>
+
+    <!-- Modal Tambah/Edit Siswa -->
+    <div class="modal-backdrop" id="siswaModal">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+          <div>
+            <h3 id="modalTitle">Tambah Siswa</h3>
+            <p class="desc">Kode QR dibuat otomatis oleh sistem</p>
+          </div>
+          <button type="button" class="modal-close" id="btnCloseModal" aria-label="Tutup formulir siswa">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <form id="siswaForm">
+          <div class="modal-body">
+            <input type="hidden" id="fId" />
+            <div class="form-grid">
+              <div class="field full">
+                <label for="fNama">Nama Lengkap *</label>
+                <input class="input" id="fNama" required placeholder="cth. Andika Putra" />
+              </div>
+              <div class="field" style="display: none">
+                <label for="fKelompok">Kelompok Latihan *</label>
+                <input class="input" id="fKelompok" list="kelompokList" placeholder="cth. U-12 Putra" />
+                <datalist id="kelompokList"></datalist>
+              </div>
+              <div class="field">
+                <label for="fTglLahir">Tanggal Lahir</label>
+                <input class="input" type="date" id="fTglLahir" />
+              </div>
+              <div class="field">
+                <label for="fNamaOrtu">Nama Orang Tua/Wali</label>
+                <input class="input" id="fNamaOrtu" placeholder="cth. Bapak Slamet" />
+              </div>
+              <div class="field">
+                <label for="fHpOrtu">No. HP Orang Tua/Wali</label>
+                <input class="input" id="fHpOrtu" placeholder="08xxxxxxxxxx" />
+              </div>
+              <div class="field full">
+                <label for="fStatus">Status Keanggotaan</label>
+                <select class="input" id="fStatus">
+                  <option value="Aktif">Aktif</option>
+                  <option value="Nonaktif">Nonaktif</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button type="button" class="btn btn-ghost" id="btnBatal">Batal</button>
+            <button type="submit" class="btn btn-primary" id="btnSimpan">Simpan Siswa</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/assets/js/core/config.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/api.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/auth.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/ui.js?v=20260916-13" defer></script>
+    <script src="/assets/js/pages/siswa.js?v=20260916-2" defer></script>
+  </body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Scan Presensi &middot; Bhakti Sebatung Academy</title>
+    <script src="/assets/js/core/head.js"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20260916-14" />
+  </head>
+  <body class="scan-page">
+    <div class="shell">
+      <div id="topbar-root"></div>
+
+      <main class="view" id="mainContent" tabindex="-1">
+        <div class="view-head" id="viewHead"></div>
+
+        <div class="scan-layout">
+          <!-- KIRI: Scanner -->
+          <div class="scan-input-column">
+            <div class="mode-switch" role="group" aria-label="Metode presensi">
+              <button type="button" class="btn btn-dark btn-sm" id="tabManual">Alat Scanner / Manual</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="tabCamera">Kamera HP</button>
+            </div>
+
+            <!-- Mode: alat scanner fisik / input manual -->
+            <div class="card" id="panelManual">
+              <div class="card-head">
+                <div>
+                  <h2>Scan atau Ketik Kode QR</h2>
+                  <p class="desc">Gunakan alat scanner atau ketik kode, lalu tekan Enter.</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="manual-input-row">
+                  <input type="text" class="input" id="manualInput" aria-label="Kode QR siswa untuk presensi" placeholder="Scan atau ketik kode QR..." autocomplete="off" />
+                  <button type="button" class="btn btn-primary" id="btnManualSubmit">Presensi</button>
+                </div>
+                <p class="field-hint">Kolom ini otomatis fokus &mdash; siap menerima input dari alat scanner kapan saja.</p>
+              </div>
+            </div>
+
+            <!-- Mode: kamera -->
+            <div class="scanner-card hidden" id="panelCamera">
+              <div class="scanner-viewport">
+                <div id="reader"></div>
+              </div>
+              <div class="scanner-status">
+                <span class="dot" id="camDot"></span>
+                <span id="camStatusText" role="status">Menyalakan kamera&hellip;</span>
+              </div>
+              <div class="scanner-toggle hidden" id="camRetryRow">
+                <button type="button" class="btn btn-primary btn-sm" id="btnRetryCam">Coba Lagi</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- KANAN: Hasil + Daftar hari ini -->
+          <div class="scan-output-column">
+            <div class="card scan-result section-gap" role="status" aria-atomic="true">
+              <div class="card-body" style="height: 100%">
+                <div class="result-empty" id="resultEmpty">
+                  <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </svg>
+                  <h3 style="margin-top: 10px">Menunggu scan pertama</h3>
+                  <p>Hasil kehadiran akan tampil di sini.</p>
+                </div>
+                <div class="result-card" id="resultCard">
+                  <div class="result-icon" id="resultIcon"></div>
+                  <h3 class="result-name" id="resultName"></h3>
+                  <p class="result-meta" id="resultMeta"></p>
+                  <div class="result-time" id="resultTime"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card scan-history">
+              <div class="card-head">
+                <h2 style="font-size: 16px">Presensi Hari Ini</h2>
+                <span class="tag tag-neutral" id="todayCount">0</span>
+              </div>
+              <div class="today-list" id="todayList"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div id="tabbar-root"></div>
+    </div>
+
+    <script src="/assets/js/vendor/html5-qrcode.min.js" defer></script>
+    <script src="/assets/js/core/config.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/api.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/auth.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/ui.js?v=20260916-13" defer></script>
+    <script src="/assets/js/pages/scan.js?v=20260916-9" defer></script>
+  </body>
+</html>

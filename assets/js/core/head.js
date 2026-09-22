@@ -1,0 +1,37 @@
+/**
+ * head.js — Injeksi elemen <head> yang sama di semua halaman.
+ * Dipanggil tanpa defer agar berjalan sebelum style.css diproses.
+ * Dengan ini, font & favicon cukup didefinisikan di SATU tempat saja.
+ */
+(function () {
+  const h = document.head;
+
+  // Google Fonts preconnect
+  [{ href: "https://fonts.googleapis.com" }, { href: "https://fonts.gstatic.com", crossOrigin: "anonymous" }].forEach(function (opt) {
+    const l = document.createElement("link");
+    l.rel = "preconnect";
+    l.href = opt.href;
+    if (opt.crossOrigin) l.crossOrigin = opt.crossOrigin;
+    h.appendChild(l);
+  });
+
+  // Google Fonts stylesheet
+  const f = document.createElement("link");
+  f.rel = "stylesheet";
+  f.href = "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap";
+  h.appendChild(f);
+
+  // Favicons
+  [
+    { rel: "icon", type: "image/png", href: "/assets/favicon/favicon-96x96.png", sizes: "96x96" },
+    { rel: "icon", type: "image/svg+xml", href: "/assets/favicon/favicon.svg" },
+    { rel: "shortcut icon", href: "/assets/favicon/favicon.ico" },
+  ].forEach(function (opt) {
+    const l = document.createElement("link");
+    l.rel = opt.rel;
+    if (opt.type) l.type = opt.type;
+    l.href = opt.href;
+    if (opt.sizes) l.sizes = opt.sizes;
+    h.appendChild(l);
+  });
+})();

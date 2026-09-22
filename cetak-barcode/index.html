@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Cetak Kode QR &middot; Bhakti Sebatung Academy</title>
+    <script src="/assets/js/core/head.js"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20260916-14" />
+  </head>
+  <body>
+    <div class="shell">
+      <div id="topbar-root"></div>
+
+      <main class="view" id="mainContent" tabindex="-1">
+        <div class="view-head no-print" id="viewHead"></div>
+
+        <div class="card data-card no-print section-gap">
+          <div class="card-body">
+            <div class="toolbar filter-toolbar">
+              <div class="search-input">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" class="input" id="searchInput" aria-label="Cari kartu siswa berdasarkan nama atau kode QR" placeholder="Cari nama atau kode QR..." />
+              </div>
+              <select class="input" id="filterKelompok" aria-label="Filter kelompok latihan" style="max-width: 200px; display: none">
+                <option value="">Semua Kelompok</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body pad-0">
+            <p class="table-hint no-print">Geser tabel untuk melihat kolom lainnya.</p>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Tabel pilihan siswa untuk cetak kode QR">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col" style="width: 36px"><input type="checkbox" id="checkAll" aria-label="Pilih semua siswa yang ditampilkan" /></th>
+                    <th scope="col">Kode QR</th>
+                    <th scope="col">Nama Siswa</th>
+                    <th scope="col" style="display: none">Kelompok</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            <div id="emptyState" class="empty-state hidden">
+              <h3>Belum ada data siswa</h3>
+              <p>Tambahkan siswa terlebih dahulu di menu Data Siswa.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview & area cetak -->
+        <div class="card" id="previewCard" style="display: none">
+          <div class="card-head no-print">
+            <div>
+              <h2>Pratinjau Kartu</h2>
+              <p class="desc">Tampilan ini yang akan tercetak di kertas</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="ticket-grid" id="print-area"></div>
+          </div>
+        </div>
+      </main>
+
+      <div id="tabbar-root"></div>
+    </div>
+
+    <script src="/assets/js/vendor/qrcode.min.js" defer></script>
+    <script src="/assets/js/core/config.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/api.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/auth.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/ui.js?v=20260916-13" defer></script>
+    <script src="/assets/js/pages/cetak-barcode.js?v=20260916-3" defer></script>
+  </body>
+</html>

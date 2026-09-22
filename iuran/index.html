@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Iuran Bulanan &middot; Bhakti Sebatung Academy</title>
+    <script src="/assets/js/core/head.js"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20260916-14" />
+  </head>
+  <body>
+    <div class="shell">
+      <div id="topbar-root"></div>
+
+      <main class="view" id="mainContent" tabindex="-1">
+        <div class="view-head" id="viewHead"></div>
+
+        <div class="stats-grid section-gap">
+          <div class="num-tile tone-teal">
+            <div class="label">Lunas</div>
+            <div class="num" id="statLunas">&ndash;</div>
+            <div class="foot" id="statLunasFoot">Sudah bayar bulan ini</div>
+          </div>
+          <div class="num-tile tone-red">
+            <div class="label">Belum Bayar</div>
+            <div class="num" id="statBelum">&ndash;</div>
+            <div class="foot">Perlu ditagih</div>
+          </div>
+          <div class="num-tile tone-orange">
+            <div class="label">Terkumpul</div>
+            <div class="num num-currency" id="statTerkumpul">&ndash;</div>
+            <div class="foot">Total nominal masuk bulan ini</div>
+          </div>
+        </div>
+
+        <div class="card data-card">
+          <div class="card-body">
+            <div class="toolbar filter-toolbar">
+              <div class="field mb-0">
+                <label for="filterBulan">Bulan</label>
+                <select class="input" id="filterBulan"></select>
+              </div>
+              <div class="field mb-0">
+                <label for="filterTahun">Tahun</label>
+                <select class="input" id="filterTahun"></select>
+              </div>
+              <div class="field mb-0" style="display: none">
+                <label for="filterKelompok">Kelompok</label>
+                <select class="input" id="filterKelompok">
+                  <option value="">Semua</option>
+                </select>
+              </div>
+              <div class="field mb-0">
+                <label for="filterStatus">Status</label>
+                <select class="input" id="filterStatus">
+                  <option value="">Semua</option>
+                  <option value="Lunas">Lunas</option>
+                  <option value="Belum Bayar">Belum Bayar</option>
+                </select>
+              </div>
+              <div class="search-input" style="flex: 1 1 200px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" class="input" id="searchInput" aria-label="Cari iuran berdasarkan nama siswa" placeholder="Cari nama siswa..." />
+              </div>
+            </div>
+          </div>
+          <div class="card-body pad-0">
+            <p class="table-hint no-print">Geser tabel untuk melihat kolom lainnya.</p>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Tabel iuran bulanan siswa">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col">Nama Siswa</th>
+                    <th scope="col" style="display: none">Kelompok</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Nominal</th>
+                    <th scope="col">Tanggal Bayar</th>
+                    <th scope="col">Keterangan</th>
+                    <th scope="col">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            <div id="emptyState" class="empty-state hidden">
+              <h3>Belum ada data siswa aktif</h3>
+              <p>Tambahkan siswa dulu di menu Siswa untuk mulai mencatat iuran.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div id="tabbar-root"></div>
+    </div>
+
+    <!-- Modal Tandai/Edit Lunas -->
+    <div class="modal-backdrop" id="iuranModal">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+        <div class="modal-head">
+          <div>
+            <h3 id="modalTitle">Tandai Lunas</h3>
+            <p class="desc" id="modalDesc"></p>
+          </div>
+          <button type="button" class="modal-close" id="btnCloseModal" aria-label="Tutup formulir iuran">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <form id="iuranForm">
+          <div class="modal-body">
+            <input type="hidden" id="fSiswaId" />
+            <div class="form-grid">
+              <div class="field full">
+                <label for="fNominal">Nominal (Rp) *</label>
+                <input class="input" type="number" min="0" step="1000" id="fNominal" required />
+              </div>
+              <div class="field full">
+                <label for="fTanggalBayar">Tanggal Bayar *</label>
+                <input class="input" type="date" id="fTanggalBayar" required />
+              </div>
+              <div class="field full">
+                <label for="fKeterangan">Keterangan</label>
+                <input class="input" id="fKeterangan" placeholder="cth. Bayar tunai ke pelatih" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button type="button" class="btn btn-ghost" id="btnBatal">Batal</button>
+            <button type="submit" class="btn btn-primary" id="btnSimpan">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Riwayat Iuran per Siswa -->
+    <div class="modal-backdrop" id="riwayatModal">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="riwayatTitle" aria-describedby="riwayatNamaSiswa">
+        <div class="modal-head">
+          <div>
+            <h3 id="riwayatTitle">Riwayat Iuran</h3>
+            <p class="desc" id="riwayatNamaSiswa"></p>
+          </div>
+          <button type="button" class="modal-close" id="btnCloseRiwayat" aria-label="Tutup riwayat iuran">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="table-wrap" tabindex="0" role="region" aria-label="Tabel riwayat pembayaran iuran siswa">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th scope="col">Bulan</th>
+                  <th scope="col">Nominal</th>
+                  <th scope="col">Tanggal Bayar</th>
+                  <th scope="col">Keterangan</th>
+                </tr>
+              </thead>
+              <tbody id="riwayatBody"></tbody>
+            </table>
+          </div>
+          <div id="riwayatEmpty" class="empty-state hidden">
+            <h3>Belum ada riwayat</h3>
+            <p>Siswa ini belum pernah tercatat membayar iuran.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/assets/js/core/config.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/api.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/auth.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/ui.js?v=20260916-13" defer></script>
+    <script src="/assets/js/pages/iuran.js?v=20260916-5" defer></script>
+  </body>
+</html>

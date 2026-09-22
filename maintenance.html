@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#16587B" />
+    <title>Sedang Pemeliharaan — Bhakti Sebatung Academy</title>
+    <meta name="description" content="Website Bhakti Sebatung Academy sedang dalam pemeliharaan. Mohon ditunggu, kami akan segera kembali." />
+
+    <link rel="icon" type="image/png" href="/assets/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/assets/favicon/favicon.ico" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <style>
+      :root {
+        --ocean-deep: #0b3245;
+        --ocean-base: #16587b;
+        --ocean-mid: #1d6f97;
+        --ocean-light: #4fa3c4;
+        --gold: #e8a33d;
+        --paper: #f7f4ea;
+        --paper-dim: #ebe9df;
+        --paper-faint: #ebe9df;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        height: 100%;
+        background: var(--ocean-deep);
+        color-scheme: dark;
+      }
+
+      html,
+      body {
+        margin: 0;
+        overflow-x: clip;
+        overscroll-behavior: none;
+      }
+
+      body {
+        font-family:
+          "Plus Jakarta Sans",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: linear-gradient(165deg, var(--ocean-deep) 0%, var(--ocean-base) 52%, var(--ocean-mid) 100%);
+        color: var(--paper);
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      /* ---- background texture: contour lines + waves, grounded in "Sebatung" (island/coastal) motif ---- */
+      .contours {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        opacity: 0.16;
+        pointer-events: none;
+        mix-blend-mode: screen;
+      }
+
+      .waves {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: -2px;
+        z-index: 0;
+        pointer-events: none;
+        line-height: 0;
+      }
+
+      .waves svg {
+        width: 200%;
+        height: auto;
+        display: block;
+        animation: drift 38s linear infinite;
+      }
+
+      .waves .layer-back {
+        opacity: 0.22;
+        animation-duration: 52s;
+      }
+      .waves .layer-front {
+        opacity: 0.4;
+      }
+
+      @keyframes drift {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      /* ---- layout ---- */
+      .scene {
+        position: relative;
+        z-index: 1;
+        flex: 1 0 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: clamp(2rem, 7vh, 4.5rem) 1.5rem;
+        padding-top: max(clamp(2rem, 7vh, 4.5rem), env(safe-area-inset-top));
+        padding-bottom: max(clamp(2rem, 7vh, 4.5rem), env(safe-area-inset-bottom));
+        text-align: center;
+      }
+
+      .logo {
+        height: clamp(56px, 10vh, 100px);
+        width: auto;
+        flex-shrink: 0;
+        margin-bottom: clamp(1.1rem, 3.2vh, 2.5rem);
+        filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.25));
+        animation: breathe 6s ease-in-out infinite;
+      }
+
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.035);
+        }
+      }
+
+      h1 {
+        font-family: "Fraunces", Georgia, serif;
+        font-optical-sizing: auto;
+        font-weight: 600;
+        font-size: clamp(2.1rem, 5.6vh, 3.9rem);
+        line-height: 1.12;
+        letter-spacing: -0.01em;
+        margin: 0 0 clamp(0.75rem, 2.4vh, 1.25rem);
+        max-width: 16ch;
+      }
+
+      h1 em {
+        font-style: italic;
+        font-weight: 500;
+        color: var(--gold);
+      }
+
+      .lede {
+        max-width: 46ch;
+        font-size: clamp(1.05rem, 2.5vh, 1.25rem);
+        line-height: 1.6;
+        color: var(--paper-dim);
+        margin: 0 0 clamp(1.5rem, 4.5vh, 3rem);
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+        max-width: 100%;
+        padding: 0.75rem 1.4rem;
+        border-radius: 999px;
+        background: rgba(247, 244, 234, 0.08);
+        border: 1px solid rgba(247, 244, 234, 0.16);
+        backdrop-filter: blur(6px);
+        margin-bottom: clamp(1.5rem, 4.5vh, 3.25rem);
+      }
+
+      .status-text {
+        font-size: 0.98rem;
+        color: var(--paper-dim);
+        font-weight: 500;
+      }
+
+      .dots {
+        display: inline-flex;
+        flex-shrink: 0;
+        gap: 0.32rem;
+      }
+
+      .dots span {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--gold);
+        animation: pulse 1.4s ease-in-out infinite;
+      }
+
+      .dots span:nth-child(2) {
+        animation-delay: 0.18s;
+      }
+      .dots span:nth-child(3) {
+        animation-delay: 0.36s;
+      }
+
+      @keyframes pulse {
+        0%,
+        80%,
+        100% {
+          opacity: 0.25;
+          transform: translateY(0);
+        }
+        40% {
+          opacity: 1;
+          transform: translateY(-2px);
+        }
+      }
+
+      .contact {
+        font-size: 0.98rem;
+        line-height: 1.7;
+        max-width: 46ch;
+        margin: 0;
+        color: var(--paper-faint);
+      }
+
+      .contact a {
+        color: var(--paper);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(247, 244, 234, 0.3);
+        transition:
+          border-color 0.2s ease,
+          color 0.2s ease;
+      }
+
+      .contact a:hover {
+        color: var(--paper);
+        border-color: var(--gold);
+      }
+
+      .contact a:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .logo,
+        .waves svg,
+        .dots span {
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg class="contours" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M-50,120 C250,60 450,180 750,110 S1150,60 1300,140" stroke="#4fa3c4" stroke-width="1.5" fill="none" />
+      <path d="M-50,220 C280,150 480,270 780,200 S1150,150 1300,240" stroke="#4fa3c4" stroke-width="1.5" fill="none" />
+      <path d="M-50,620 C260,560 470,680 760,610 S1140,560 1300,640" stroke="#4fa3c4" stroke-width="1.5" fill="none" />
+      <path d="M-50,700 C270,640 460,750 770,690 S1150,650 1300,720" stroke="#4fa3c4" stroke-width="1.5" fill="none" />
+    </svg>
+
+    <div class="waves" aria-hidden="true">
+      <svg class="layer-back" viewBox="0 0 1440 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M0,120 C120,90 240,150 360,120 C480,90 600,150 720,120 C840,90 960,150 1080,120 C1200,90 1320,150 1440,120 L1440,200 L0,200 Z
+               M1440,120 C1560,90 1680,150 1800,120 C1920,90 2040,150 2160,120 C2280,90 2400,150 2520,120 C2640,90 2760,150 2880,120 L2880,200 L1440,200 Z"
+          fill="#4fa3c4"
+        />
+      </svg>
+      <svg class="layer-front" viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M0,90 C140,120 260,60 400,90 C540,120 660,60 800,90 C940,120 1060,60 1200,90 C1320,110 1400,90 1440,90 L1440,160 L0,160 Z
+               M1440,90 C1580,120 1700,60 1840,90 C1980,120 2100,60 2240,90 C2380,120 2500,60 2640,90 C2760,110 2840,90 2880,90 L2880,160 L1440,160 Z"
+          fill="#16587B"
+        />
+      </svg>
+    </div>
+
+    <main class="scene">
+      <img class="logo" src="/assets/img/bhakti_academy_logo.png" alt="Bhakti Sebatung Academy" />
+
+      <h1>Lagi beres-beres <em>sebentar</em></h1>
+
+      <p class="lede">Web Bhakti Sebatung Academy sedang dalam pemeliharaan supaya akan lebih baik lagi. Mohon ditunggu ya, sebentar lagi kami kembali.</p>
+
+      <div class="status">
+        <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="status-text">Sedang menyiapkan halaman</span>
+      </div>
+
+      <p class="contact">Ada yang mendesak? Hubungi kami di <a href="https://www.instagram.com/bhakti.officiall/">@bhakti.officiall</a></p>
+    </main>
+
+    <script>
+      // subtle parallax on the background contours, disabled for touch / reduced-motion users
+      var prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var isTouch = matchMedia("(hover: none)").matches;
+      var contours = document.querySelector(".contours");
+
+      if (!prefersReduced && !isTouch && contours) {
+        window.addEventListener("mousemove", function (e) {
+          var x = (e.clientX / window.innerWidth - 0.5) * 10;
+          var y = (e.clientY / window.innerHeight - 0.5) * 10;
+          contours.style.transform = "translate(" + x + "px, " + y + "px)";
+        });
+      }
+    </script>
+  </body>
+</html>
