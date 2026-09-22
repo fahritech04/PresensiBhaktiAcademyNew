@@ -1203,6 +1203,14 @@ table.tbl td.mono {
   background: #fbe2dc;
   color: #8a2617;
 }
+.tag-putra {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.tag-putri {
+  background: #fce7f3;
+  color: #be185d;
+}
 .num-tile.tone-orange {
   border-color: #eedcba;
   background: #fffbf3;

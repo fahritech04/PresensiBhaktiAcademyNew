@@ -1,0 +1,8 @@
+project_id = "presensi-bhakti"
+
+[functions.api]
+# Autentikasi dipegang sendiri lewat tabel `sessions` + token kustom
+# (lihat rpc_login / rpc_verify_token di schema.sql), bukan lewat JWT
+# Supabase Auth. Endpoint ini memang publik, sama seperti Web App Apps
+# Script lama yang di-deploy "Who has access: Anyone".
+verify_jwt = false

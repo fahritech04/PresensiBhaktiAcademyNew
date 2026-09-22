@@ -528,6 +528,7 @@ function mapSiswaOut_(r) {
     id: r.ID,
     barcode: r.Barcode,
     nama: r.Nama,
+    jenisKelamin: r.JenisKelamin || (r.Kelompok && r.Kelompok.includes("Putri") ? "Putri" : "Putra"),
     tanggalLahir: r.TanggalLahir ? formatDateISO_(r.TanggalLahir) : "",
     kelompok: r.Kelompok,
     namaOrtu: r.NamaOrtu,

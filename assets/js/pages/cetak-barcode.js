@@ -9,6 +9,7 @@
   const emptyState = document.getElementById("emptyState");
   const searchInput = document.getElementById("searchInput");
   const filterKelompok = document.getElementById("filterKelompok");
+  const filterJenisKelamin = document.getElementById("filterJenisKelamin");
   const checkAll = document.getElementById("checkAll");
 
   init();
@@ -34,6 +35,7 @@
   function bindEvents() {
     searchInput.addEventListener("input", renderTable);
     filterKelompok.addEventListener("change", renderTable);
+    if (filterJenisKelamin) filterJenisKelamin.addEventListener("change", renderTable);
     checkAll.addEventListener("change", () => {
       getVisibleRows().forEach((s) => (checkAll.checked ? selected.add(s.id) : selected.delete(s.id)));
       renderTable();
@@ -43,10 +45,12 @@
   function getVisibleRows() {
     const q = searchInput.value.trim().toLowerCase();
     const kel = filterKelompok.value;
+    const jk = filterJenisKelamin ? filterJenisKelamin.value : "";
     return allSiswa.filter((s) => {
       const matchQ = !q || s.nama.toLowerCase().includes(q) || s.barcode.toLowerCase().includes(q);
       const matchKel = !kel || s.kelompok === kel;
-      return matchQ && matchKel;
+      const matchJk = !jk || s.jenisKelamin === jk;
+      return matchQ && matchKel && matchJk;
     });
   }
 
@@ -68,6 +72,9 @@
         <td class="mono">${UI.escapeHtml(s.barcode)}</td>
         <td class="cell-name">${UI.escapeHtml(s.nama)}</td>
         <td style="display: none">${UI.escapeHtml(s.kelompok || "-")}</td>
+        <td>
+          <span class="tag ${s.jenisKelamin === "Putri" ? "tag-putri" : "tag-putra"}">${UI.escapeHtml(s.jenisKelamin || "Putra")}</span>
+        </td>
       </tr>`,
       )
       .join("");
@@ -116,7 +123,7 @@
         <div class="ticket-bottom">
           <div class="qr-box"><canvas data-code="${UI.escapeHtml(s.barcode)}"></canvas></div>
           <div class="meta">
-            <div class="code">${UI.escapeHtml(s.barcode)}</div>
+            <div class="code">${UI.escapeHtml(s.barcode)} &middot; ${UI.escapeHtml(s.jenisKelamin || "Putra")}</div>
             <div class="club">Kartu Presensi Latihan.<br>Tunjukkan kode QR ini saat scan.</div>
           </div>
         </div>

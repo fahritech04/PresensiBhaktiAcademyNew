@@ -13,6 +13,7 @@
   const searchInput = document.getElementById("searchInput");
   const filterKelompok = document.getElementById("filterKelompok");
   const filterStatus = document.getElementById("filterStatus");
+  const filterJenisKelamin = document.getElementById("filterJenisKelamin");
 
   const form = document.getElementById("siswaForm");
   const modalTitle = document.getElementById("modalTitle");
@@ -21,7 +22,7 @@
 
   async function init() {
     bindEvents();
-    tableBody.innerHTML = UI.skeletonRows(6, 5);
+    tableBody.innerHTML = UI.skeletonRows(6, 6);
     await loadData();
   }
 
@@ -33,6 +34,7 @@
     searchInput.addEventListener("input", renderTable);
     filterKelompok.addEventListener("change", renderTable);
     filterStatus.addEventListener("change", renderTable);
+    if (filterJenisKelamin) filterJenisKelamin.addEventListener("change", renderTable);
   }
 
   async function loadData() {
@@ -59,12 +61,14 @@
     const q = searchInput.value.trim().toLowerCase();
     const kel = filterKelompok.value;
     const status = filterStatus.value;
+    const jk = filterJenisKelamin ? filterJenisKelamin.value : "";
 
     const filtered = allSiswa.filter((s) => {
       const matchQ = !q || s.nama.toLowerCase().includes(q) || s.barcode.toLowerCase().includes(q);
       const matchKel = !kel || s.kelompok === kel;
       const matchStatus = !status || s.status === status;
-      return matchQ && matchKel && matchStatus;
+      const matchJk = !jk || s.jenisKelamin === jk;
+      return matchQ && matchKel && matchStatus && matchJk;
     });
 
     if (!filtered.length) {
@@ -84,6 +88,9 @@
           <div class="cell-sub">Daftar ${UI.formatTanggal(s.tanggalDaftar)}</div>
         </td>
         <td style="display: none">${UI.escapeHtml(s.kelompok || "-")}</td>
+        <td>
+          <span class="tag ${s.jenisKelamin === "Putri" ? "tag-putri" : "tag-putra"}">${UI.escapeHtml(s.jenisKelamin || "Putra")}</span>
+        </td>
         <td>${s.hpOrtu ? `<a href="https://wa.me/${s.hpOrtu}" target="_blank" rel="noopener" class="wa-link">${UI.escapeHtml(s.hpOrtu)}</a>` : "<span class='muted'>-</span>"}</td>
         <td><span class="tag ${s.status === "Aktif" ? "tag-aktif" : "tag-nonaktif"}">${s.status}</span></td>
         <td>
@@ -104,6 +111,7 @@
     form.reset();
     document.getElementById("fId").value = siswa ? siswa.id : "";
     document.getElementById("fNama").value = siswa ? siswa.nama : "";
+    document.getElementById("fJenisKelamin").value = siswa && siswa.jenisKelamin ? siswa.jenisKelamin : "Putra";
     document.getElementById("fKelompok").value = siswa ? siswa.kelompok : "";
     document.getElementById("fTglLahir").value = siswa && siswa.tanggalLahir ? siswa.tanggalLahir.substring(0, 10) : "";
     document.getElementById("fNamaOrtu").value = siswa ? siswa.namaOrtu : "";
@@ -117,9 +125,15 @@
   async function onSubmit(e) {
     e.preventDefault();
     const id = document.getElementById("fId").value;
+    const jenisKelamin = document.getElementById("fJenisKelamin").value || "Putra";
+    const rawKelompok = document.getElementById("fKelompok").value.trim();
+    // Fallback otomatis [JK:...] pada kelompok jika Edge Function belum dideploy ulang
+    const fallbackKelompok = `[JK:${jenisKelamin}]${rawKelompok}`;
+
     const payload = {
       nama: document.getElementById("fNama").value.trim(),
-      kelompok: document.getElementById("fKelompok").value.trim(),
+      jenisKelamin,
+      kelompok: fallbackKelompok,
       tanggalLahir: document.getElementById("fTglLahir").value,
       namaOrtu: document.getElementById("fNamaOrtu").value.trim(),
       hpOrtu: document.getElementById("fHpOrtu").value.trim(),

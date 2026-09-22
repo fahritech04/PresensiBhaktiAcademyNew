@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Cetak Kode QR &middot; Bhakti Sebatung Academy</title>
     <script src="/assets/js/core/head.js"></script>
-    <link rel="stylesheet" href="/assets/css/style.css?v=20260916-14" />
+    <link rel="stylesheet" href="/assets/css/style.css?v=20260922-1" />
   </head>
   <body>
     <div class="shell">
@@ -27,6 +27,11 @@
               <select class="input" id="filterKelompok" aria-label="Filter kelompok latihan" style="max-width: 200px; display: none">
                 <option value="">Semua Kelompok</option>
               </select>
+              <select class="input" id="filterJenisKelamin" aria-label="Filter jenis kelamin" style="max-width: 160px">
+                <option value="">Semua Gender</option>
+                <option value="Putra">Putra</option>
+                <option value="Putri">Putri</option>
+              </select>
             </div>
           </div>
           <div class="card-body pad-0">
@@ -39,6 +44,7 @@
                     <th scope="col">Kode QR</th>
                     <th scope="col">Nama Siswa</th>
                     <th scope="col" style="display: none">Kelompok</th>
+                    <th scope="col">Jenis Kelamin</th>
                   </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -73,6 +79,6 @@
     <script src="/assets/js/core/api.js?v=20260916-2" defer></script>
     <script src="/assets/js/core/auth.js?v=20260916-2" defer></script>
     <script src="/assets/js/core/ui.js?v=20260916-13" defer></script>
-    <script src="/assets/js/pages/cetak-barcode.js?v=20260916-3" defer></script>
+    <script src="/assets/js/pages/cetak-barcode.js?v=20260922-1" defer></script>
   </body>
 </html>
