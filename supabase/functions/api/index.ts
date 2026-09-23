@@ -1,22 +1,28 @@
 // =============================================================================
-// Bhakti Sebatung Academy — Edge Function "api"
+// Bhakti Sebatung Academy — Edge Function "api" (versi HARDENED)
+//
 // Pengganti Google Apps Script Web App (assets/code.gs -> doPost/doGet).
 //
 // TIDAK ADA logic bisnis di sini. File ini hanya:
-//   1. Baca { action, token, payload } dari request (sama seperti body Apps
-//      Script lama).
-//   2. Kalau action bukan "login", verifikasi token lewat rpc_verify_token.
-//   3. Panggil fungsi Postgres rpc_xxx yang sesuai (lihat supabase/schema.sql
-//      untuk logic aslinya — 1:1 dengan actionXxx() di code.gs lama).
-//   4. Bungkus hasil jadi { ok:true, data } atau { ok:false, message, code }
-//      — PERSIS format response yang sudah dipakai assets/js/core/api.js,
-//      jadi TIDAK ADA file frontend lain yang perlu diubah.
+//   1. Baca { action, token, payload } dari request (POST saja).
+//   2. Origin allowlist (ALLOWED_ORIGIN) — blok request dari domain lain.
+//   3. Cek token sesi lewat rpc_verify_token (kalau action bukan "login").
+//   4. Panggil fungsi Postgres rpc_xxx yang sesuai (lihat supabase/schema.sql).
+//   5. Bungkus hasil jadi { ok:true, data } / { ok:false, message, code } —
+//      PERSIS dengan kontrak lama, jadi file frontend tidak berubah.
+//
+// Hardening vs versi lama:
+//   - CORS kini diatur ke ALLOWED_ORIGIN (bukan "*").
+//   - Fingerprint GET ("API is running") diperha.
+//   - GET untuk action diperha (token tidak pernah masuk URL query string).
+//   - Login: IP client (x-forwarded-for) dipasar ke rpc_login (anti
+//     brute-force per-IP layer 2 di database) + limiter memory kasar.
+//   - Header keamanan: Cache-Control no-store, X-Content-Type-Options.
+//   - Aksi tidak dikenali -> pesan generik (tidak refleks input).
 //
 // Deploy:
+//   supabase secrets set ALLOWED_ORIGIN=https://bhaktisebatung.web.id
 //   supabase functions deploy api --no-verify-jwt
-// ("--no-verify-jwt" karena autentikasi dipegang sendiri lewat tabel
-//  `sessions` + token kustom, bukan lewat sistem Auth bawaan Supabase —
-//  sama seperti dulu Web App Apps Script di-set "Who has access: Anyone").
 // =============================================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -28,26 +34,69 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
-// Sama seperti Apps Script lama yang di-deploy "Who has access: Anyone",
-// endpoint ini memang publik (proteksi ada di layer token/sesi kustom,
-// bukan di CORS). Ganti "*" dengan domain kamu kalau mau dipersempit.
-const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-};
+// Domain GitHub Pages / custom domain. Bisa CSV multi-domain:
+//   ALLOWED_ORIGIN=https://bhaktisebatung.web.id,https://user.github.io
+function allowedOrigins(): string[] {
+  const raw = (Deno.env.get("ALLOWED_ORIGIN") || "https://bhaktisebatung.web.id");
+  return raw.split(",").map((s) => s.trim().toLowerCase()).filter((s) => s !== "");
+}
+
+function isAllowedOrigin(req: Request): boolean {
+  const origin = req.headers.get("Origin");
+  if (!origin) return true; // bukan browser (curl/alat): proteksi lewat token
+  const o = origin.toLowerCase();
+  return allowedOrigins().some((a) => o === a || (a.startsWith("https://") && o === a));
+}
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin");
+  const allow = origin && isAllowedOrigin(req) ? origin : allowedOrigins()[0] || "";
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Max-Age": "86400",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+  };
+}
+
+/** IP client dari header x-forwarded-for (seto oleh gateway Supabase). */
+function clientIp(req: Request): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) {
+    const first = fwd.split(",")[0].trim();
+    if (first) return first;
+  }
+  return "";
+}
 
 const PUBLIC_ACTIONS = new Set(["login"]);
 
-function jsonSuccess(data: unknown) {
+// Burst limiter memory (per-instance, best-effort — layer final di database).
+const LOGIN_LIMIT = { max: 30, windowMs: 60_000 };
+const loginHits = new Map<string, number[]>();
+function allowLoginBurst(ip: string): boolean {
+  const now = Date.now();
+  const arr = (loginHits.get(ip) || []).filter((t) => now - t < LOGIN_LIMIT.windowMs);
+  if (arr.length >= LOGIN_LIMIT.max) {
+    loginHits.set(ip, arr);
+    return false;
+  }
+  arr.push(now);
+  loginHits.set(ip, arr);
+  return true;
+}
+
+function jsonSuccess(req: Request, data: unknown) {
   return new Response(JSON.stringify({ ok: true, data }), {
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: { ...corsHeaders(req), "Content-Type": "application/json" },
   });
 }
 
-function jsonError(message: string, code = "ERROR") {
+function jsonError(req: Request, message: string, code = "ERROR") {
   return new Response(JSON.stringify({ ok: false, message, code }), {
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: { ...corsHeaders(req), "Content-Type": "application/json" },
   });
 }
 
@@ -59,7 +108,7 @@ async function call(fn: string, params: Record<string, unknown>) {
 }
 
 // Nilai "kosong" (undefined/""); dipetakan ke null supaya cocok dengan
-// parameter opsional di fungsi Postgres (yang pakai COALESCE utk default).
+// parameter opsional di fungsi Postgres (COALESCE utk default).
 function orNull(v: unknown) {
   return v === undefined || v === "" ? null : v;
 }
@@ -69,7 +118,7 @@ type Handler = (payload: any, session: any) => Promise<unknown>;
 // Peta action -> fungsi Postgres. Nama action & bentuk payload SAMA PERSIS
 // dengan yang sudah dipanggil oleh assets/js/pages/*.js — tidak berubah.
 const ACTIONS: Record<string, Handler> = {
-  login: (p) => call("rpc_login", { p_username: p.username, p_password: p.password }),
+  login: (p) => call("rpc_login", { p_username: p.username, p_password: p.password, p_ip: CURRENT_IP }),
 
   getDashboardStats: () => call("rpc_get_dashboard_stats", {}),
 
@@ -152,50 +201,52 @@ const ACTIONS: Record<string, Handler> = {
   getRiwayatIuranSiswa: (p) => call("rpc_get_riwayat_iuran_siswa", { p_siswa_id: p.siswaId }),
 };
 
+// IP request berjalan (per-isolate request berproses sequential, aman).
+let CURRENT_IP = "";
+
 Deno.serve(async (req) => {
+  if (!isAllowedOrigin(req)) {
+    return jsonError(req, "Kesalahan: origin tidak diizinkan.", "FORBIDDEN");
+  }
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS_HEADERS });
+    return new Response("ok", { headers: corsHeaders(req) });
+  }
+  if (req.method !== "POST") {
+    return jsonError(req, "Method tidak diizinkan.", "METHOD_NOT_ALLOWED");
   }
 
-  const url = new URL(req.url);
-
-  // Setara doGet(e) tanpa e.parameter.action di code.gs lama: cek cepat
-  // lewat browser bahwa fungsi ini aktif.
-  if (req.method === "GET" && !url.searchParams.get("action")) {
-    return new Response(
-      JSON.stringify({ ok: true, message: "Bhakti Sebatung Academy API is running." }),
-      { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
-    );
-  }
+  CURRENT_IP = clientIp(req);
 
   try {
-    let action = "";
-    let payload: Record<string, unknown> = {};
-    let token: string | null = null;
+    const body = await req.json().catch(() => ({} as any));
+    const action = body.action;
+    const payload = body.payload || {};
+    const token = body.token || null;
 
-    if (req.method === "GET") {
-      action = url.searchParams.get("action") || "";
-      payload = JSON.parse(url.searchParams.get("payload") || "{}");
-      token = url.searchParams.get("token");
-    } else {
-      const body = await req.json().catch(() => ({}) as any);
-      action = body.action;
-      payload = body.payload || {};
-      token = body.token || null;
+    if (typeof action !== "string" || action === "") {
+      return jsonError(req, "Aksi tidak dikenali.", "UNKNOWN_ACTION");
     }
 
     const handler = ACTIONS[action];
-    if (!handler) return jsonError("Aksi tidak dikenali: " + action);
+    if (!handler) return jsonError(req, "Aksi tidak dikenali.", "UNKNOWN_ACTION");
 
     let session: any = null;
     if (!PUBLIC_ACTIONS.has(action)) {
       session = await call("rpc_verify_token", { p_token: token });
-      if (!session) return jsonError("Sesi berakhir, silakan login kembali.", "AUTH_EXPIRED");
+      if (!session) return jsonError(req, "Sesi berakhir, silakan login kembali.", "AUTH_EXPIRED");
+    }
+
+    if (action === "login" && !allowLoginBurst(CURRENT_IP || "unknown")) {
+      return jsonError(req, "Terlalu banyak percobaan. Coba lagi dalam beberapa menit.", "RATE_LIMITED");
     }
 
     const result = await handler(payload, session);
-    return jsonSuccess(result);
+    return jsonSuccess(req, result);
   } catch (err) {
-    return jsonError(err instanceof Error ? err.message : "Terjadi kesalahan tak terduga.");
+    const message = err instanceof Error ? err.message : "";
+    // Error tidak dari rpc aplikasi (mis. JSON tidak valid) -> pesan generik.
+    if (!message) return jsonError(req, "Terjadi kesalahan tak terduga.", "BAD_REQUEST");
+    return jsonError(req, message);
   }
 });

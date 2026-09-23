@@ -64,7 +64,7 @@ bhakti-basketball-attendance/
     └── js/
         ├── core/           # Pondasi aplikasi (konfigurasi, auth, API, UI, head injector)
         │   ├── head.js     # Injeksi favicon & Google Fonts terpusat
-        │   ├── config.js   # ⚠️ Isi SUPABASE_URL & SUPABASE_ANON_KEY kamu di sini
+        │   ├── config.js   # ⚠️ Kredensial Supabase obfuscate (lihat catatan 🔐)
         │   ├── api.js      # Wrapper komunikasi ke Edge Function (+ cache data statis)
         │   ├── auth.js     # Sesi login & guard halaman
         │   └── ui.js       # Komponen bersama (nav atas/bawah, toast, modal, skeleton loader)
@@ -89,9 +89,11 @@ bhakti-basketball-attendance/
 Ikuti **[`MIGRASI_SUPABASE.md`](./MIGRASI_SUPABASE.md)** untuk setup lengkap dari nol:
 1. Buat project Supabase.
 2. Jalankan `supabase/schema.sql` di SQL Editor.
-3. Deploy Edge Function `api` (`supabase functions deploy api --no-verify-jwt`).
-4. Isi `SUPABASE_URL` & `SUPABASE_ANON_KEY` di `assets/js/core/config.js`.
-5. Deploy ke GitHub Pages.
+3. Jalankan `supabase/hardening.sql` di SQL Editor (hardening keamanan).
+4. Deploy Edge Function `api` (`supabase functions deploy api --no-verify-jwt`).
+5. Set secret origin domain: `supabase secrets set ALLOWED_ORIGIN=https://bhaktisebatung.web.id`.
+6. Set kredensial di `assets/js/core/config.js` (nilai diobfuscate, lihat di bawah).
+7. Deploy ke GitHub Pages.
 
 - **Username**: `admin`
 - **Password default**: `admin123` → ⚠️ **segera ganti** (lihat `MIGRASI_SUPABASE.md` bagian "Uji coba").
@@ -192,7 +194,7 @@ siswa yang scan pada hari itu otomatis berstatus **Hadir** (tanpa pengecekan tel
 
 ## 🔧 Troubleshooting
 
-- **"SUPABASE_URL belum diatur"** → isi `SUPABASE_URL` & `SUPABASE_ANON_KEY` di `assets/js/core/config.js`.
+- **"SUPABASE_URL belum diatur"** → nilai kredensial di `config.js` tidak valid / kosong. Re-obfuscate kredensial project kamu (baca catatan 🔐 "Ganti kredensial").
 - **"Respon server tidak valid"** → pastikan Edge Function sudah dideploy dan CORS
   mengizinkan domain situsmu.
 - **Data tidak tampil / "Sesi berakhir"** → Edge Function harus di-deploy dengan
@@ -266,27 +268,72 @@ ke keyset pagination (`WHERE (tanggal, waktu) < (?, ?)`) jika data melebihi itu.
 
 ## 🔐 Catatan Keamanan
 
-**Kenapa `SUPABASE_ANON_KEY` & URL Edge Function terlihat di Inspect Element/Network tab?**
-Ini normal dan berlaku untuk _semua_ website (client-side), bukan celah keamanan
-khusus di proyek ini. Yang penting bukan menyembunyikan URL/key-nya, tapi memastikan
-tidak berguna tanpa otorisasi yang sah. Karena itu:
+**Kenapa endpoint API tetap terlihat di Inspect Element/Network tab?**
+Proyek ini 100% client-side (GitHub Pages static — tanpa server). Karena itu
+endpoint & kunci anon **tidak bisa fisikal dihapus** dari tampilan browser:
+browser harus tahu URL supaya bisa fetch. Yang aman adalah **pemakaian tidak
+berguna tanpa otorisasi** — bukan kerahasiaan string.
 
-- **Hanya aksi `login` yang bersifat publik di Edge Function.** Semua aksi lain
-  wajib menyertakan token sesi valid (tabel `sessions`), didapat hanya setelah
-  login berhasil — token diverifikasi lewat `rpc_verify_token` di setiap request.
-- **RLS aktif tanpa policy** di semua tabel (hanya `service_role` yang bisa akses),
-  dan seluruh fungsi `rpc_*` hanya bisa dieksekusi oleh `service_role`. Satu-satunya
-  jalan masuk ke data adalah lewat Edge Function.
-- **Proteksi brute-force login aktif**: setelah 5 kali percobaan password salah
-  berturut-turut untuk 1 username, akun tsb otomatis terkunci sementara selama
-  15 menit (diatur di `app_config()` → `max_login_attempts` / `login_lockout_minutes`).
-- Password admin di-hash (SHA-256 + pepper dari `app_config()`) sebelum disimpan —
-  tidak pernah disimpan sebagai teks polos.
+Layer proteksi yang diaktifkan (versi hardening, = `supabase/hardening.sql`
++ Edge Function versi hardened):
 
-Sistem ini dirancang untuk kebutuhan internal klub/akademi kecil-menengah, bukan
-aplikasi enterprise. Hal paling penting yang **wajib** kamu lakukan: **ganti
-password default `admin123`** sesegera mungkin — lewat SQL:
+| Layer | Mekanisme |
+|---|---|
+| 1. Struktur akses | RLS aktif tanpa policy di semua tabel; hanya `service_role` bisa akses; semua jalan lewat Edge Function |
+| 2. Autentikasi sesi | Token kustom (UUID) wajib per request, diverifikasi `rpc_verify_token`; expire 12 jam |
+| 3. Token at rest | Token sesi **disimpan sebagai SHA-256 hash** — dump database tidak leak token valid |
+| 4. Password at rest | **bcrypt (cost 11)**; hash SHA-256 peppered lama auto-upgrade saat login sukses |
+| 5. Brute force user | ≥5 gagal berturut-turut → lock 15 menit (tabel `login_attempts`) |
+| 6. Brute force IP | ≥10 gagal per-IP → lock 15 menit (tabel `login_attempts_ip`, `supabase/hardening.sql`) |
+| 7. Slowing | Delay jitter 350–1200 ms per login gagal + burst limiter memory di Edge Function |
+| 8. Origin allowlist | Edge Function cek `Origin` vs `ALLOWED_ORIGIN` — blok request dari domain lain |
+| 9. Info leak | Fingerprint endpoint diperha; aksi tidak dikenali → pesan generik (no hacecho); token tidak pernah di URL GET (GET sengaja diperha) |
+| 10. Headers | `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, CORS dipepersempit ke origin situs |
+| 11. Konfig frontend | URL/key/function diobfuscate (`config.js`) supaya tidak plaintext dalam source; referrer `no-referrer` di semua halaman |
+| 12. XSS | Semua data dinamis di-render lewat `UI.escapeHtml`, tidak `document.write` |
+
+Password default admin **wajib** diganti sesegera (hash lama SHA-256 akan
+auto-upgrade ke bcrypt saat login pertama):
 
 ```sql
 select reset_admin('admin', 'password-baru-kamu');
 ```
+
+### 🔑 Ganti kredensial Supabase dalam config.js (obfuscate)
+
+Kredensial di `config.js` tidak diisi plaintext. Untuk ganti project:
+
+1. Buka `assets/js/core/config.js`, dulu nilai taked diobfuscate:
+   ```js
+   // decode manual untuk dicek nilai lama (browser console):
+   const K = [0xa7, 0x3c, 0xd1, 0x09];
+   const d = (s) => { const r = atob(s); let o = ""; for (let i = 0; i < r.length; i++) o += String.fromCharCode(r.charCodeAt(i) ^ K[i % 4]); return o; };
+   console.log(d(APP_CONFIG.SUPABASE_URL), d(APP_CONFIG.SUPABASE_ANON_KEY), d(APP_CONFIG.SUPABASE_FUNCTION));
+   ```
+2. Ganti nilai di project Supabase, lalu obfuscate nilai baru (alat online
+   base64/xor, key `[0xa7,0x3c,0xd1,0x09]`, muten per byte) dan tempel hasil
+   ke `deobf(...)`.
+
+> ⚠️ Obfuscation bukan keamanan riil — kunci anon memang public by design.
+> Proteksi sesungguhnya ada di layer 1–8, bukan di string config.
+
+### 🚫 Purge data siswa dari git (PII)
+
+`supabase/import_siswa_pendataan.sql` berisi PII riil (nama aluno, HP ortu,
+tanggal lahir) dan **belum ini sudah ter-push ke GitHub** (commit `998ee5c`).
+File sudah diuntrack + di-gitignore. Kalau repo **public**, PII sudah terleak —
+wajib **purge riwayat git** supaya tidak bisa dibaca dari history:
+
+```bash
+# Baca: tidak bisa undelele — backup repo dulu (clone --mirror).
+# Option A: git filter-repo (rekomendasi)
+git filter-repo --path supabase/import_siswa_pendataan.sql --invert-paths
+# Option B: BFG
+bfg --delete-files import_siswa_pendataan.sql
+# lalu force-push SEMUA branch + tag:
+git push origin --force --all
+```
+
+Plus deaktivasi GitHub caching (Settings → Pages) dan consider Deactivate /
+re-create repo kalau data sangat sensitif. Data PII yang sudah terleak tidak
+bisa "diuntrack" — kemungkinan besar perlu inform yang tersa.

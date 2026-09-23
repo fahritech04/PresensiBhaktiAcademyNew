@@ -77,6 +77,27 @@ Edge Function otomatis punya akses ke `SUPABASE_URL` dan
 `SUPABASE_SERVICE_ROLE_KEY` tanpa perlu diset manual — keduanya disediakan
 otomatis oleh runtime Supabase untuk tiap Edge Function.
 
+**`ALLOWED_ORIGIN` (wajib untuk versi hardened)** — domain situs kamu,
+supaya Edge Function blok request dari origin lain:
+
+```bash
+supabase secrets set ALLOWED_ORIGIN=https://bhaktisebatung.web.id
+```
+
+## 3.5) Hardening keamanan (wajib)
+
+Jalankan **`supabase/hardening.sql`** di SQL Editor (dapat setelah
+`schema.sql`). File ini tidak mengubah aturan bisnis, hanya diamankan:
+
+- Anti brute-force **per-IP** (`login_attempts_ip`) di sampung lockout
+  per-username yang sudah ada.
+- Password admin → **bcrypt** (hash SHA-256 lama tetap bisa login, lalu
+  auto-upgrade saat sukses).
+- Token sesi disimpan sebagai **SHA-256 hash** (tidak plaintext di database).
+
+Jangan ikut jalanan ini di deploy pertama kali atau update security:
+jalankan `hardening.sql` sekali setelah schema jalan.
+
 ## 4) Hubungkan frontend ke Supabase
 
 Buka `assets/js/core/config.js`, isi 2 baris ini (ambil dari **Project

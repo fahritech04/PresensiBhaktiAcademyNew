@@ -1,0 +1,14 @@
+# ---------------------------------------------------------------
+# Keamanan: file import mengandung PII siswa (nama, HP ortu, tanggal
+# lahir). JANGAN pernah commit ke git — ini source leak GDPR-level.
+# Kalau file import lama sudah ter-push ke GitHub, PURGE riwayat
+# (lihat README -> Catatan Keamanan -> "Purge data siswa dari git").
+# ---------------------------------------------------------------
+supabase/import_siswa_pendataan.sql
+supabase/*_pendataan.sql
+
+# Data / export / secret
+*.xlsx
+*.csv
+.env
+.env.*

@@ -7,6 +7,13 @@
 (function () {
   const h = document.head;
 
+  // Keamanan: tidak sampa path halaman ke situs luar (Google Fonts, wa.me, dst.)
+  // supaya informasi navigasi/internal tidak tampil di network public (Referer).
+  const referrer = document.createElement("meta");
+  referrer.name = "referrer";
+  referrer.content = "no-referrer";
+  h.appendChild(referrer);
+
   // Google Fonts preconnect
   [{ href: "https://fonts.googleapis.com" }, { href: "https://fonts.gstatic.com", crossOrigin: "anonymous" }].forEach(function (opt) {
     const l = document.createElement("link");
