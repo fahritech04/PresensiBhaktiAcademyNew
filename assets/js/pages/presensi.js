@@ -1,6 +1,5 @@
 (function () {
-  Auth.guardPage();
-  UI.renderShell({ active: "presensi", title: "Riwayat Presensi", desc: "Rekap kehadiran latihan" });
+  UI.renderPage({ active: "presensi", title: "Riwayat Presensi", desc: "Rekap kehadiran latihan" });
 
   let currentRows = [];
   let total = 0;
@@ -41,7 +40,7 @@
   async function fillKelompok() {
     try {
       const data = await Api.cached("getKelompokList");
-      kelompok.innerHTML = '<option value="">Semua</option>' + UI.optionsHtml(data.kelompok || []);
+      UI.fillSelect(kelompok, data.kelompok || [], "Semua");
     } catch (e) {
       /* biarkan default jika gagal */
     }

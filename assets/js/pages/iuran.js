@@ -1,6 +1,5 @@
 (function () {
-  Auth.guardPage();
-  UI.renderShell({ active: "iuran", title: "Iuran Bulanan", desc: "Kelola status pembayaran iuran latihan tiap bulan" });
+  UI.renderPage({ active: "iuran", title: "Iuran Bulanan", desc: "Kelola status pembayaran iuran latihan tiap bulan" });
 
   const BULAN_NAMA = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
@@ -67,8 +66,7 @@
   async function loadKelompok() {
     try {
       const data = await Api.cached("getKelompokList");
-      const opts = UI.optionsHtml(data.kelompok || []);
-      filterKelompok.innerHTML = '<option value="">Semua</option>' + opts;
+      UI.fillSelect(filterKelompok, data.kelompok || [], "Semua");
     } catch (err) {
       // Non-fatal: filter kelompok saat ini disembunyikan di UI, jadi aman diabaikan.
     }

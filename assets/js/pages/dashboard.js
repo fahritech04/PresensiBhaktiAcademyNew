@@ -1,6 +1,5 @@
 (async function () {
-  Auth.guardPage();
-  UI.renderShell({ active: "dashboard", title: "Dashboard", desc: "Ringkasan Tampilan Presensi" });
+  UI.renderPage({ active: "dashboard", title: "Dashboard", desc: "Ringkasan Tampilan Presensi" });
 
   document.getElementById("todayDateLabel").textContent = UI.formatTanggal(new Date(), true);
   document.getElementById("todayTableBody").innerHTML = UI.skeletonRows(4, 3);

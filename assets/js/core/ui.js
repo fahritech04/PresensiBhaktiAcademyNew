@@ -39,6 +39,14 @@ const UI = (() => {
     { key: "cetak", href: "/cetak-barcode/", label: "Cetak QR", icon: ICONS.cetak },
   ];
 
+  /* ---------------------------- PAGE BOOT ---------------------------- */
+  /** Boot standar halaman terproteksi: guard sesi + render shell navigasi.
+   *  Urutan selalu sama di semua halaman (guard dulu, lalu shell). */
+  function renderPage({ active, title, desc }) {
+    Auth.guardPage();
+    renderShell({ active, title, desc });
+  }
+
   function renderShell({ active, title, desc }) {
     const session = Auth.getSession() || {};
 
@@ -112,6 +120,12 @@ const UI = (() => {
 
   function optionsHtml(values) {
     return values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+  }
+
+  /** Isi <select> dengan opsi sederhana. placeholder dijadikan opsi pertama (nilai ""). */
+  function fillSelect(select, values, placeholder = "") {
+    const options = (placeholder ? `<option value="">${escapeHtml(placeholder)}</option>` : "") + optionsHtml(values);
+    select.innerHTML = options;
   }
 
   function setButtonLoading(button, isLoading, idleLabel) {
@@ -362,6 +376,7 @@ const UI = (() => {
 
   return {
     ICONS,
+    renderPage,
     renderShell,
     toast,
     showVeil,
@@ -379,6 +394,7 @@ const UI = (() => {
     formatRupiah,
     escapeHtml,
     optionsHtml,
+    fillSelect,
     setButtonLoading,
   };
 })();

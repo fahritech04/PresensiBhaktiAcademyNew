@@ -1,6 +1,5 @@
 (function () {
-  Auth.guardPage();
-  UI.renderShell({ active: "cetak", title: "Cetak Kode QR", desc: "Buat kartu kode QR untuk dibagikan ke siswa" });
+  UI.renderPage({ active: "cetak", title: "Cetak Kode QR", desc: "Buat kartu kode QR untuk dibagikan ke siswa" });
 
   let allSiswa = [];
   const selected = new Set();
@@ -24,7 +23,7 @@
     try {
       const data = await Api.cached("getSiswaList");
       allSiswa = (data.siswa || []).filter((s) => s.status === "Aktif");
-      filterKelompok.innerHTML = '<option value="">Semua Kelompok</option>' + UI.optionsHtml(data.kelompok || []);
+      UI.fillSelect(filterKelompok, data.kelompok || [], "Semua Kelompok");
       renderTable();
     } catch (err) {
       UI.toast(err.message, "error");

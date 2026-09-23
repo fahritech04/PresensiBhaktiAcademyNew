@@ -1,6 +1,5 @@
 (function () {
-  Auth.guardPage();
-  UI.renderShell({ active: "siswa", title: "Data Siswa", desc: "Kelola anggota & kode QR" });
+  UI.renderPage({ active: "siswa", title: "Data Siswa", desc: "Kelola anggota & kode QR" });
   document.getElementById("viewHeadActions").innerHTML = `
     <a href="/cetak-barcode/" class="btn btn-ghost btn-sm">${UI.ICONS.cetak} Cetak QR</a>
     <button class="btn btn-primary btn-sm" id="btnTambah">+ Tambah Siswa</button>`;
@@ -53,7 +52,7 @@
 
   function fillKelompokFilters() {
     const opts = UI.optionsHtml(kelompokOptions);
-    filterKelompok.innerHTML = '<option value="">Semua Kelompok</option>' + opts;
+    UI.fillSelect(filterKelompok, kelompokOptions, "Semua Kelompok");
     document.getElementById("kelompokList").innerHTML = opts;
   }
 
