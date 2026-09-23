@@ -19,6 +19,7 @@ const Auth = (() => {
 
   function logout() {
     localStorage.removeItem(APP_CONFIG.SESSION_KEY);
+    Api.clearCache();
     window.location.href = "/";
   }
 
@@ -38,6 +39,7 @@ const Auth = (() => {
 
   async function login(username, password) {
     const data = await Api.call("login", { username, password });
+    Api.clearCache();
     saveSession({ token: data.token, nama: data.nama, username: data.username, role: data.role });
     return data;
   }

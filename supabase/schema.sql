@@ -120,6 +120,10 @@ create table if not exists presensi (
 );
 create index if not exists idx_presensi_waktu   on presensi (waktu desc);
 create index if not exists idx_presensi_tanggal on presensi (tanggal);
+-- Index fungsional supaya lookup scan (lower(barcode)) memakai index, bukan full scan.
+create index if not exists idx_siswa_barcode_lower on siswa (lower(barcode));
+-- Index komposit untuk filter riwayat & dashboard (tanggal + kelompok/status).
+create index if not exists idx_presensi_tanggal_kelompok_status on presensi (tanggal, kelompok, status);
 
 -- Filosofi tetap sama seperti sebelumnya: TIDAK ADA baris untuk kombinasi
 -- siswa+bulan+tahun berarti "Belum Bayar". Baris baru dibuat hanya saat
@@ -785,16 +789,16 @@ $$;
 -- =============================================================================
 create or replace function rpc_get_presensi_list(
   p_tanggal date default null, p_dari date default null, p_sampai date default null,
-  p_kelompok text default null, p_status text default null
+  p_kelompok text default null, p_status text default null,
+  p_limit int default null, p_offset int default null
 ) returns jsonb language plpgsql as $$
 declare
   v_rows jsonb;
+  v_total int;
+  v_offset int := coalesce(p_offset, 0);
 begin
-  select coalesce(jsonb_agg(jsonb_build_object(
-           'id', r.id, 'nama', r.nama, 'kelompok', r.kelompok,
-           'waktu', r.waktu, 'status', r.status
-         ) order by r.waktu desc), '[]'::jsonb)
-    into v_rows
+  select count(*)
+    into v_total
     from presensi r
    where (p_tanggal is null or r.tanggal = p_tanggal)
      and (p_tanggal is not null or p_dari is null or r.tanggal >= p_dari)
@@ -802,7 +806,26 @@ begin
      and (p_kelompok is null or p_kelompok = '' or r.kelompok = p_kelompok)
      and (p_status is null or p_status = '' or r.status = p_status);
 
-  return jsonb_build_object('rows', v_rows);
+  -- p_limit null => ambil semua (untuk ekspor laporan), tanpa batas.
+  select coalesce(jsonb_agg(t.item order by t.waktu desc), '[]'::jsonb)
+    into v_rows
+    from (
+      select jsonb_build_object(
+               'id', r.id, 'nama', r.nama, 'kelompok', r.kelompok,
+               'waktu', r.waktu, 'status', r.status
+             ) as item, r.waktu
+        from presensi r
+       where (p_tanggal is null or r.tanggal = p_tanggal)
+         and (p_tanggal is not null or p_dari is null or r.tanggal >= p_dari)
+         and (p_tanggal is not null or p_sampai is null or r.tanggal <= p_sampai)
+         and (p_kelompok is null or p_kelompok = '' or r.kelompok = p_kelompok)
+         and (p_status is null or p_status = '' or r.status = p_status)
+       order by r.waktu desc
+       limit ((case when p_limit is null then 1000000000 else p_limit end))
+       offset v_offset
+    ) t;
+
+  return jsonb_build_object('rows', v_rows, 'total', v_total, 'limit', p_limit, 'offset', v_offset);
 end;
 $$;
 
@@ -818,7 +841,8 @@ declare
   v_belum_hari_ini int;
   v_tren jsonb;
   v_riwayat jsonb;
-  v_iuran jsonb;
+  v_iuran_lunas int := 0;
+  v_iuran_terkumpul numeric := 0;
   v_bulan int := extract(month from v_today)::int;
   v_tahun int := extract(year from v_today)::int;
 begin
@@ -850,7 +874,14 @@ begin
     into v_riwayat
     from presensi r where r.tanggal = v_today;
 
-  v_iuran := rpc_get_iuran_bulan(v_bulan, v_tahun, null);
+  -- Agregat iuran bulan ini langsung di DB (count/sum), tanpa jsonb_agg
+  -- seluruh baris siswa — sama basis dengan rpc_get_iuran_bulan (status Aktif).
+  select count(*) filter (where i.status = 'Lunas'),
+         coalesce(sum(i.nominal) filter (where i.status = 'Lunas'), 0)
+    into v_iuran_lunas, v_iuran_terkumpul
+    from siswa s
+    left join iuran i on i.siswa_id = s.id and i.bulan = v_bulan and i.tahun = v_tahun
+   where s.status = 'Aktif';
 
   return jsonb_build_object(
     'totalSiswaAktif', v_total_aktif,
@@ -861,10 +892,10 @@ begin
     'riwayatHariIni', v_riwayat,
     'iuranBulanIni', jsonb_build_object(
       'bulan', v_bulan, 'tahun', v_tahun,
-      'namaBulan', v_iuran->>'namaBulan',
-      'lunas', v_iuran->'totalLunas',
-      'belum', v_iuran->'totalBelum',
-      'totalTerkumpul', v_iuran->'totalTerkumpul'
+      'namaBulan', bulan_nama(v_bulan),
+      'lunas', v_iuran_lunas,
+      'belum', greatest(0, v_total_aktif - v_iuran_lunas),
+      'totalTerkumpul', v_iuran_terkumpul
     )
   );
 end;

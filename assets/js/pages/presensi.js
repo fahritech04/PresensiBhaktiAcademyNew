@@ -3,12 +3,18 @@
   UI.renderShell({ active: "presensi", title: "Riwayat Presensi", desc: "Rekap kehadiran latihan" });
 
   let currentRows = [];
+  let total = 0;
+  let page = 0;
+  const PAGE_SIZE = 500;
 
   const dari = document.getElementById("filterDari");
   const sampai = document.getElementById("filterSampai");
   const kelompok = document.getElementById("filterKelompok");
   const status = document.getElementById("filterStatus");
   const tableBody = document.getElementById("tableBody");
+  const emptyState = document.getElementById("emptyState");
+  const btnPrev = document.getElementById("btnPrev");
+  const btnNext = document.getElementById("btnNext");
 
   init();
 
@@ -20,7 +26,12 @@
     sampai.value = today;
 
     tableBody.innerHTML = UI.skeletonRows(5, 5);
-    document.getElementById("btnFilter").addEventListener("click", loadData);
+    document.getElementById("btnFilter").addEventListener("click", () => {
+      page = 0;
+      loadData();
+    });
+    if (btnPrev) btnPrev.addEventListener("click", () => { if (page > 0) { page--; loadData(); } });
+    if (btnNext) btnNext.addEventListener("click", () => { page++; loadData(); });
     document.getElementById("btnExport").addEventListener("click", exportHTML);
     await Promise.all([fillKelompok(), loadData()]);
   }
@@ -29,7 +40,7 @@
 
   async function fillKelompok() {
     try {
-      const data = await Api.call("getKelompokList");
+      const data = await Api.cached("getKelompokList");
       kelompok.innerHTML = '<option value="">Semua</option>' + UI.optionsHtml(data.kelompok || []);
     } catch (e) {
       /* biarkan default jika gagal */
@@ -44,18 +55,30 @@
         sampai: sampai.value,
         kelompok: kelompok.value,
         status: status.value,
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
       });
       currentRows = data.rows || [];
+      total = Number(data.total ?? currentRows.length);
       renderTable();
+      updatePager();
     } catch (err) {
       UI.toast(err.message, "error");
       tableBody.innerHTML = "";
+      emptyState.classList.remove("hidden");
     }
+  }
+
+  function updatePager() {
+    if (!btnPrev || !btnNext) return;
+    btnPrev.disabled = page === 0;
+    btnNext.disabled = page * PAGE_SIZE + currentRows.length >= total;
+    if (!total) return;
+    document.getElementById("rowInfo").textContent = `${page * PAGE_SIZE + currentRows.length} dari ${total} data`;
   }
 
   function renderTable() {
     const empty = document.getElementById("emptyState");
-    document.getElementById("rowInfo").textContent = `${currentRows.length} data`;
 
     if (!currentRows.length) {
       tableBody.innerHTML = "";
@@ -78,15 +101,33 @@
       .join("");
   }
 
-  function exportHTML() {
-    if (!currentRows.length) {
+  async function exportHTML() {
+    if (!total) {
       UI.toast("Tidak ada data untuk diunduh.", "error");
       return;
     }
 
+    UI.toast("Menyiapkan laporan...", "success");
     const periodeLabel = `${dari.value} s/d ${sampai.value}`;
     const printDate = new Date().toLocaleString("id-ID", { dateStyle: "long", timeStyle: "short" });
-    const html = buildPresensiReport(currentRows, periodeLabel, printDate);
+
+    // Ekspor selalu ambil SELURUH data sesuai filter (tanpa limit), supaya
+    // laporan tidak terpotong pagination.
+    let rows = currentRows;
+    try {
+      const data = await Api.call("getPresensiList", {
+        dari: dari.value,
+        sampai: sampai.value,
+        kelompok: kelompok.value,
+        status: status.value,
+      });
+      if (data.rows && data.rows.length) rows = data.rows;
+    } catch (err) {
+      UI.toast("Gagal memuat data lengkap: " + err.message, "error");
+      return;
+    }
+
+    const html = buildPresensiReport(rows, periodeLabel, printDate);
 
     const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
     const url = URL.createObjectURL(blob);

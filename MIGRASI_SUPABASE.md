@@ -19,9 +19,9 @@ sama sekali**.
 | Yang diubah di frontend | — | `assets/js/core/config.js` & `assets/js/core/api.js` saja |
 | Login default | `admin` / `admin123` | Tetap sama (`admin` / `admin123`), segera ganti setelah login pertama |
 
-File `assets/code.gs` lama **tetap dibiarkan ada** di repo sebagai
-arsip/referensi — sudah tidak dipakai lagi setelah migrasi ini, tapi tidak
-saya hapus supaya tidak menghilangkan riwayat kerja kamu.
+File `assets/code.gs` lama (Google Apps Script) sudah **dihapus** dari repo setelah
+migrasi ini rampung — backend lama sudah tidak dipakai. Isi aslinya bisa diambil
+kembali kapan saja dari riwayat git bila diperlukan.
 
 ---
 
@@ -182,7 +182,7 @@ Kalau kamu sudah punya data siswa/jadwal/iuran di Spreadsheet lama:
 
 ## Kalau ingin kembali ke Apps Script
 
-`assets/code.gs` tidak dihapus. Untuk rollback: kembalikan isi
-`assets/js/core/config.js` & `assets/js/core/api.js` ke versi sebelum
-migrasi ini (lihat riwayat git / commit sebelumnya), lalu deploy ulang Web
-App Apps Script seperti pada README asli.
+`assets/code.gs` sudah dihapus, tetapi bisa diambil dari riwayat git (commit
+sebelum penghapusan). Untuk rollback: kembalikan isi `assets/js/core/config.js`
+& `assets/js/core/api.js` ke versi sebelum migrasi ini, deploy ulang Web App
+Apps Script dari `code.gs` lama, lalu pasang URL deployment-nya di `config.js`.

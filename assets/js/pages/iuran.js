@@ -66,7 +66,7 @@
 
   async function loadKelompok() {
     try {
-      const data = await Api.call("getKelompokList");
+      const data = await Api.cached("getKelompokList");
       const opts = UI.optionsHtml(data.kelompok || []);
       filterKelompok.innerHTML = '<option value="">Semua</option>' + opts;
     } catch (err) {

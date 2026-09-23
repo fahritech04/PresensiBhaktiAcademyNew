@@ -22,7 +22,7 @@
     tableBody.innerHTML = UI.skeletonRows(4, 5);
 
     try {
-      const data = await Api.call("getSiswaList");
+      const data = await Api.cached("getSiswaList");
       allSiswa = (data.siswa || []).filter((s) => s.status === "Aktif");
       filterKelompok.innerHTML = '<option value="">Semua Kelompok</option>' + UI.optionsHtml(data.kelompok || []);
       renderTable();

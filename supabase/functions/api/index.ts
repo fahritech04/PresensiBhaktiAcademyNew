@@ -111,6 +111,8 @@ const ACTIONS: Record<string, Handler> = {
       p_sampai: orNull(p.sampai),
       p_kelompok: orNull(p.kelompok),
       p_status: orNull(p.status),
+      p_limit: orNull(p.limit),
+      p_offset: orNull(p.offset),
     }),
 
   getIuranBulan: (p) =>
