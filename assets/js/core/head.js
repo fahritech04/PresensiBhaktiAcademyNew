@@ -1,7 +1,8 @@
 /**
  * head.js — Injeksi elemen <head> yang sama di semua halaman.
  * Dipanggil tanpa defer agar berjalan sebelum style.css diproses.
- * Dengan ini, font & favicon cukup didefinisikan di SATU tempat saja.
+ * Font & favicon cukup didefinisikan di SATU tempat (file ini saja),
+ * dipakai oleh SEMUA halaman — tanpa pengulangan di HTML.
  */
 (function () {
   const h = document.head;
@@ -21,7 +22,7 @@
   f.href = "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap";
   h.appendChild(f);
 
-  // Favicons
+  // Favicons — injection via JS supaya hanya 1 tempat simpan (DRY).
   [
     { rel: "icon", type: "image/png", href: "/assets/favicon/favicon-96x96.png", sizes: "96x96" },
     { rel: "icon", type: "image/svg+xml", href: "/assets/favicon/favicon.svg" },
