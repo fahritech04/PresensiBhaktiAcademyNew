@@ -119,11 +119,12 @@ create table if not exists presensi (
   unique (siswa_id, tanggal)
 );
 create index if not exists idx_presensi_waktu   on presensi (waktu desc);
-create index if not exists idx_presensi_tanggal on presensi (tanggal);
+-- Index komposit untuk filter riwayat & dashboard (tanggal + kelompok/status).
+-- Subsumes index `tanggal` lama (priffix sama) — drop supaya tidak redundant.
+drop index if exists idx_presensi_tanggal;
+create index if not exists idx_presensi_tanggal_kelompok_status on presensi (tanggal, kelompok, status);
 -- Index fungsional supaya lookup scan (lower(barcode)) memakai index, bukan full scan.
 create index if not exists idx_siswa_barcode_lower on siswa (lower(barcode));
--- Index komposit untuk filter riwayat & dashboard (tanggal + kelompok/status).
-create index if not exists idx_presensi_tanggal_kelompok_status on presensi (tanggal, kelompok, status);
 
 -- Filosofi tetap sama seperti sebelumnya: TIDAK ADA baris untuk kombinasi
 -- siswa+bulan+tahun berarti "Belum Bayar". Baris baru dibuat hanya saat
@@ -787,6 +788,10 @@ $$;
 -- =============================================================================
 -- RIWAYAT PRESENSI & DASHBOARD — setara actionGetPresensiList / actionGetDashboardStats
 -- =============================================================================
+-- Overload lama (5 param) dari schema versi sebelum pagination — drop supaya
+-- tidak ada duplikat fungsi khi re-run (Supabase/Postgres autoload).
+drop function if exists rpc_get_presensi_list(date, date, date, text, text);
+
 create or replace function rpc_get_presensi_list(
   p_tanggal date default null, p_dari date default null, p_sampai date default null,
   p_kelompok text default null, p_status text default null,
@@ -797,34 +802,31 @@ declare
   v_total int;
   v_offset int := coalesce(p_offset, 0);
 begin
-  select count(*)
-    into v_total
-    from presensi r
-   where (p_tanggal is null or r.tanggal = p_tanggal)
-     and (p_tanggal is not null or p_dari is null or r.tanggal >= p_dari)
-     and (p_tanggal is not null or p_sampai is null or r.tanggal <= p_sampai)
-     and (p_kelompok is null or p_kelompok = '' or r.kelompok = p_kelompok)
-     and (p_status is null or p_status = '' or r.status = p_status);
-
-  -- p_limit null => ambil semua (untuk ekspor laporan), tanpa batas.
-  select coalesce(jsonb_agg(t.item order by t.waktu desc), '[]'::jsonb)
-    into v_rows
+  -- Filter didefinisikan SATU kali (CTE base), dipakai oleh count & pagination —
+  -- tanpa pengulangan condition where.
+  with base as (
+    select id, nama, kelompok, waktu, status
+      from presensi r
+     where (p_tanggal is null or r.tanggal = p_tanggal)
+       and (p_tanggal is not null or p_dari is null or r.tanggal >= p_dari)
+       and (p_tanggal is not null or p_sampai is null or r.tanggal <= p_sampai)
+       and (p_kelompok is null or p_kelompok = '' or r.kelompok = p_kelompok)
+       and (p_status is null or p_status = '' or r.status = p_status)
+  )
+  select
+      coalesce(jsonb_agg(b.item order by b.waktu desc), '[]'::jsonb),
+      (select count(*) from base)
+    into v_rows, v_total
     from (
-      select jsonb_build_object(
-               'id', r.id, 'nama', r.nama, 'kelompok', r.kelompok,
-               'waktu', r.waktu, 'status', r.status
-             ) as item, r.waktu
-        from presensi r
-       where (p_tanggal is null or r.tanggal = p_tanggal)
-         and (p_tanggal is not null or p_dari is null or r.tanggal >= p_dari)
-         and (p_tanggal is not null or p_sampai is null or r.tanggal <= p_sampai)
-         and (p_kelompok is null or p_kelompok = '' or r.kelompok = p_kelompok)
-         and (p_status is null or p_status = '' or r.status = p_status)
-       order by r.waktu desc
+      select jsonb_build_object('id', id, 'nama', nama, 'kelompok', kelompok, 'waktu', waktu, 'status', status) as item,
+             waktu
+        from base
+       order by waktu desc
        limit ((case when p_limit is null then 1000000000 else p_limit end))
        offset v_offset
-    ) t;
+    ) b;
 
+  -- p_limit null => ambil semua (untuk ekspor laporan), tanpa batas.
   return jsonb_build_object('rows', v_rows, 'total', v_total, 'limit', p_limit, 'offset', v_offset);
 end;
 $$;

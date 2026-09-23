@@ -13,10 +13,6 @@ const UI = (() => {
     alertTriangle:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
-    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
-    printer:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
-    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
     edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
     trash:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
@@ -166,19 +162,6 @@ const UI = (() => {
     }, 3600);
   }
 
-  /* --------------------------- LOADING VEIL --------------------------- */
-  function showVeil() {
-    if (document.querySelector(".veil")) return;
-    const veil = document.createElement("div");
-    veil.className = "veil";
-    veil.innerHTML = '<div class="spinner"></div>';
-    document.body.appendChild(veil);
-  }
-  function hideVeil() {
-    const veil = document.querySelector(".veil");
-    if (veil) veil.remove();
-  }
-
   /* --------------------------- SKELETON LOADER --------------------------- */
   /** Skeleton baris tabel — dipakai saat data sedang di-fetch, terasa lebih cepat drpd veil penuh. */
   function skeletonRows(colCount, rowCount = 4) {
@@ -187,10 +170,6 @@ const UI = (() => {
       html += '<tr class="skel-row">' + `<td><div class="skel" style="height:14px;"></div></td>`.repeat(colCount) + "</tr>";
     }
     return html;
-  }
-  /** Skeleton block generik, mis. untuk stat tile saat memuat. */
-  function skeletonBlock(height = 20, width = "60%") {
-    return `<div class="skel" style="height:${height}px;width:${width};"></div>`;
   }
 
   /* ------------------------- CONFIRM DIALOG ------------------------- */
@@ -360,15 +339,6 @@ const UI = (() => {
     return dateToISO(new Date());
   }
 
-  function initials(name) {
-    return String(name || "?")
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((w) => w.charAt(0).toUpperCase())
-      .join("");
-  }
-
   function formatRupiah(n) {
     const num = Number(n) || 0;
     return "Rp" + num.toLocaleString("id-ID");
@@ -379,10 +349,7 @@ const UI = (() => {
     renderPage,
     renderShell,
     toast,
-    showVeil,
-    hideVeil,
     skeletonRows,
-    skeletonBlock,
     confirmDialog,
     openModal,
     closeModal,
@@ -390,7 +357,6 @@ const UI = (() => {
     formatJam,
     dateToISO,
     todayISO,
-    initials,
     formatRupiah,
     escapeHtml,
     optionsHtml,
