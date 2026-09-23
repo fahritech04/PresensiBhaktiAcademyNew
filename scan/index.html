@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Scan Presensi &middot; Bhakti Sebatung Academy</title>
-    <script src="/assets/js/core/head.js?v=20260923-1"></script>
-    <link rel="stylesheet" href="/assets/css/style.css?v=20260923-4" />
+    <script src="/assets/js/core/head.js?v=20260923-2"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20260923-5" />
   </head>
   <body class="scan-page">
     <div class="shell">
@@ -34,6 +34,11 @@
                 <div class="manual-input-row">
                   <input type="text" class="input" id="manualInput" aria-label="Kode QR siswa untuk presensi" placeholder="Scan atau ketik kode QR..." autocomplete="off" />
                   <button type="button" class="btn btn-primary" id="btnManualSubmit">Presensi</button>
+                </div>
+                <div class="backdate-row">
+                  <label class="input-label" for="scanDate">Tanggal latihan</label>
+                  <input type="date" class="input" id="scanDate" aria-label="Tanggal latihan untuk presensi" />
+                  <p class="field-hint">Default: hari ini. Ganti untuk backdate &mdash; scan telat, latihan hari lama (max 7 hari).</p>
                 </div>
                 <p class="field-hint">Kolom ini otomatis fokus &mdash; siap menerima input dari alat scanner kapan saja.</p>
               </div>
@@ -78,7 +83,7 @@
 
             <div class="card scan-history">
               <div class="card-head">
-                <h2 style="font-size: 16px">Presensi Hari Ini</h2>
+                <h2 style="font-size: 16px" id="todayHeading">Presensi Hari Ini</h2>
                 <span class="tag tag-neutral" id="todayCount">0</span>
               </div>
               <div class="today-list" id="todayList"></div>
@@ -91,10 +96,10 @@
     </div>
 
     <script src="/assets/js/vendor/html5-qrcode.min.js" defer></script>
-    <script src="/assets/js/core/config.js?v=20260923-1" defer></script>
+    <script src="/assets/js/core/config.js?v=20260923-2" defer></script>
     <script src="/assets/js/core/api.js?v=20260923-1" defer></script>
     <script src="/assets/js/core/auth.js?v=20260923-1" defer></script>
     <script src="/assets/js/core/ui.js?v=20260923-2" defer></script>
-    <script src="/assets/js/pages/scan.js?v=20260923-1" defer></script>
+    <script src="/assets/js/pages/scan.js?v=20260923-2" defer></script>
   </body>
 </html>

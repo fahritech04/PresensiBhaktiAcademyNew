@@ -28,12 +28,14 @@ const APP_CONFIG = (() => {
   }
 
   return {
-    SUPABASE_URL: deobf("z0iledQG/ibBWLluxEu4YNReoWDCV6dwxU++cYlPpHnGXrB6whKyZg=="),
+    SUPABASE_URL: deobf("z0iledQG/ibRUb15w0anZNVZp3rVX7xvzkWib4lPpHnGXrB6whKyZg=="),
     SUPABASE_ANON_KEY: deobf(
-      "wkWbYcV7smDoVZtA8kaYOOlVmHruUoM8xH+YP+5XoVHxf5swiVmoQ9df4kTOc7hD3ViJS89lvE/dZoJA1HW/Q8tmuECRdbxTzF2Wbc1Y42XXX+ND0F2GX9VYv2XOX+Mwk3W4fs5fvDDUZoJAkXW8T9Je4z3OcJJD12WJWM5zu0yUc4VI0HK7bpRxhVjUdbxfk1+SQJFxu0zQcoVQl3KVat9ymTmJROJk3lC4Y8V4n1PlRrxq1EW7RcAIuG/+TLNf5XC0f9Vl/Hn+ep1I1nmIOQ==",
+      "wkWbYcV7smDoVZtA8kaYOOlVmHruUoM8xH+YP+5XoVHxf5swiVmoQ9df4kTOc7hD3ViJS89lvE/dZoJA1HW/Q8tmuECRdb9T016ZS8xZv1PTX7xflV/iQ81ehlPXWYlHynW4fs5fvDDUZoJAkXW8T9Je4z3OcJJD12WJWM5zu0yUc4VI33OVTJNzlVzUdbxfk1+SQJFxu0zQcoVqlnKrbpNyiTmJBbNkkw2YapZ9sE7PRIFG9kmVYMFu4GjhY7tB/WilZspLu3nuDOZE8Xm5Zg==",
     ),
     // Nama Edge Function yang dideploy (lihat supabase/functions/api/index.ts).
-    SUPABASE_FUNCTION: deobf("1V24YcZSt2jPTrhvzg=="),
+    // Deploy default: `supabase functions deploy api` → nama = "api".
+    // Kalau nama function berbeda, update nilai deobf ini (lihat README 🔐).
+    SUPABASE_FUNCTION: deobf("xky4"),
     APP_NAME: "Bhakti Sebatung Academy",
     APP_SHORT: "BSA Attendance",
     TOLERANSI_TELAT_MENIT_DEFAULT: 15, // dipakai jika kelompok tidak punya jadwal

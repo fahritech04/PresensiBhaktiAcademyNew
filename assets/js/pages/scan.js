@@ -13,6 +13,8 @@
   const camStatusText = document.getElementById("camStatusText");
   const reader = document.getElementById("reader");
   const cameraViewport = reader.parentElement;
+  const scanDate = document.getElementById("scanDate");
+  const todayHeading = document.getElementById("todayHeading");
 
   let html5QrCode = null;
   let cameraRunning = false;
@@ -32,12 +34,31 @@
 
   function init() {
     bindTabs();
+    setupDateField();
     bindManual();
     bindCamera();
     loadToday();
     focusManualInput();
     window.addEventListener("beforeunload", stopCamera);
     window.addEventListener("pagehide", stopCamera);
+  }
+
+  /* ---------------------- TANGGAL LATIHAN (BACKDATE) ---------------------- */
+  function setupDateField() {
+    const today = UI.todayISO();
+    const min = new Date();
+    min.setDate(min.getDate() - 7);
+    scanDate.max = today;
+    scanDate.min = UI.dateToISO(min);
+    scanDate.value = today;
+    scanDate.addEventListener("change", () => {
+      if (!scanDate.value) scanDate.value = today;
+      loadToday();
+    });
+  }
+
+  function selectedTanggal() {
+    return scanDate.value || UI.todayISO();
   }
 
   /* ---------------------- TAB SWITCHING ---------------------- */
@@ -231,7 +252,7 @@
     processing = true;
 
     try {
-      const data = await Api.call("scanPresensi", { barcode: code });
+      const data = await Api.call("scanPresensi", { barcode: code, tanggal: selectedTanggal() });
       playBeep(true);
       showResult({
         ok: true,
@@ -292,8 +313,10 @@
   /* ---------------------- DAFTAR HARI INI ---------------------- */
   async function loadToday() {
     try {
-      const data = await Api.call("getPresensiList", { tanggal: UI.todayISO() });
+      const tanggal = selectedTanggal();
+      const data = await Api.call("getPresensiList", { tanggal });
       todayList = data.rows || [];
+      todayHeading.textContent = tanggal === UI.todayISO() ? "Presensi Hari Ini" : `Presensi ${UI.formatTanggal(tanggal)}`;
       renderTodayList();
     } catch (err) {
       // diam-diam gagal, tidak mengganggu proses scan

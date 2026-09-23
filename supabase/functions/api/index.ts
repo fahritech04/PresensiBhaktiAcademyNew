@@ -151,7 +151,7 @@ const ACTIONS: Record<string, Handler> = {
 
   getKelompokList: () => call("rpc_get_kelompok_list", {}),
 
-  scanPresensi: (p) => call("rpc_scan_presensi", { p_barcode: p.barcode }),
+  scanPresensi: (p) => call("rpc_scan_presensi", { p_barcode: p.barcode, p_tanggal: orNull(p.tanggal) }),
 
   getPresensiList: (p) =>
     call("rpc_get_presensi_list", {

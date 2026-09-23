@@ -54,6 +54,9 @@ bhakti-basketball-attendance/
 ├── maintenance.html        # Halaman pemeliharaan (opsional, tetap di root)
 ├── supabase/
 │   ├── schema.sql          # MASTER skema: tabel, RLS, & seluruh fungsi rpc_ (logic backend)
+│   ├── hardening.sql       # DELTA keamanan: bcrypt, token hash, anti brute-force IP
+│   ├── backdate_presensi.sql # DELTA: scan telat / latihan hari lama (p_tanggal)
+│   ├── import_siswa_pendataan.sql ⚠️ PII — diuntrack, JANGAN commit (lihat 🔐)
 │   ├── config.toml         # Konfigurasi project Supabase (CLI)
 │   └── functions/api/      # Edge Function router tipis (memanggil rpc_* sesuai action)
 └── assets/
@@ -96,7 +99,7 @@ Ikuti **[`MIGRASI_SUPABASE.md`](./MIGRASI_SUPABASE.md)** untuk setup lengkap dar
 7. Deploy ke GitHub Pages.
 
 - **Username**: `admin`
-- **Password default**: `admin123` → ⚠️ **segera ganti** (lihat `MIGRASI_SUPABASE.md` bagian "Uji coba").
+- **Password default** (seed di `schema.sql`): `Bsaa135*` → ⚠️ **segera ganti** (lihat `MIGRASI_SUPABASE.md` bagian "Uji coba").
 
 ---
 
@@ -128,6 +131,13 @@ Ada dua mode, bisa dipilih sesuai alat yang tersedia di lapangan:
 Sistem otomatis menentukan **Hadir** atau **Telat** berdasarkan jadwal di tabel
 `jadwal`, dan mencegah siswa yang sama tercatat dua kali di hari yang sama
 (constraint `UNIQUE(siswa_id, tanggal)` di database).
+
+**Backdate (scan telat / latihan hari lama)** — kolom **"Tanggal latihan"** di
+halaman Scan (default: hari ini). Admin bisa ganti ke tanggal latihan sebelumnya
+(maks 7 hari, diatur `scan_backdate_max_days` di `app_config()`), lalu scan kode
+QR — presensi dicatat di **tanggal latihan yang benar**, status Hadir/Telat sesuai
+jadwal **hari latihan tersebut** (bukan hari scan), dan `keterangan` dicatat
+`Backdate` untuk audit. Duplikat tetap diblock. Tanggal di masa depan di-kick.
 
 ### Riwayat Presensi
 
@@ -194,7 +204,8 @@ siswa yang scan pada hari itu otomatis berstatus **Hadir** (tanpa pengecekan tel
 
 ## 🔧 Troubleshooting
 
-- **"SUPABASE_URL belum diatur"** → nilai kredensial di `config.js` tidak valid / kosong. Re-obfuscate kredensial project kamu (baca catatan 🔐 "Ganti kredensial").
+- **`SUPABASE_URL belum diatur`** → nilai kredensial di `config.js` tidak valid / kosong. Re-obfuscate kredensial project kamu (baca catatan 🔐 "Ganti kredensial").
+- **Backdate tidak berfungsi / "p_tanggal tidak dikenali"** → `rpc_scan_presensi` di-reset ke versi lama (mis. setelah re-run `schema.sql`). Re-run `supabase/backdate_presensi.sql` (dan `supabase/hardening.sql` kalau baru) — **urutan wajib: `schema.sql` → `hardening.sql` → `backdate_presensi.sql`**.
 - **"Respon server tidak valid"** → pastikan Edge Function sudah dideploy dan CORS
   mengizinkan domain situsmu.
 - **Data tidak tampil / "Sesi berakhir"** → Edge Function harus di-deploy dengan
@@ -233,6 +244,12 @@ berikut dipertahankan:
 
 - **Storage (500 MB)**: presensi tumbuh ±1.200 baris/bulan (±4 MB/tahun) → aman
   puluhan tahun. Tidak perlu arsip/hapus otomatis.
+
+  > **Estimasi aktual 80 siswa × 4 latihan/seminggu**: 320 scan/seminggu →
+  > **±1.280 baris/bulan** → ±16.600 baris/tahun → **±2,5 MB/tahun** storage.
+  > Cuma ±0,5% dari kuota 500 MB per tahun. Edge Function untuk scan ±1.300
+  > invoke/bulan (+ ~5–10K untuk halaman admin) vs kuota **500K/bulan** → baik
+  > margin kuota aman.
 - **Edge Function (±500K invoke/bulan)**: pemakaian riil < 5K/bulan (halaman admin +
   scan). Data statis (kelompok/siswa) di-*cache* `localStorage` (TTL 5-10 menit)
   di `assets/js/core/api.js` sehingga membuka halaman berulang tidak membakar kuota.

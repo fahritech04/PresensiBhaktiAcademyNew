@@ -6,6 +6,8 @@
 --
 -- Jalanan: buka file ini di SQL Editor, copy semua isinya, Run. Aman
 -- dijalankan ulang (semua create/replace idempotent).
+-- URUTAN WAJIB deploy: schema.sql -> hardening.sql -> backdate_presensi.sql
+-- (re-run schema.sql mengreset fungsi rpc_ -> re-run hardening + backdate).
 --
 -- Isi:
 --   1. app_config() + key config baru (ip_max_login_attempts, delay login)
