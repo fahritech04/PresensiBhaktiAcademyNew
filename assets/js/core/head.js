@@ -23,10 +23,13 @@
   h.appendChild(f);
 
   // Favicons — injection via JS supaya hanya 1 tempat simpan (DRY).
+  // ?v= cache-busting: browser caches favicon per-origin sangat intens;
+  // URL versiyon baru biar re-fetch, jadi cukup update VCACHE di sini saja.
+  const VCACHE = "20260923-1";
   [
-    { rel: "icon", type: "image/png", href: "/assets/favicon/favicon-96x96.png", sizes: "96x96" },
-    { rel: "icon", type: "image/svg+xml", href: "/assets/favicon/favicon.svg" },
-    { rel: "shortcut icon", href: "/assets/favicon/favicon.ico" },
+    { rel: "icon", type: "image/png", href: `/assets/favicon/favicon-96x96.png?v=${VCACHE}`, sizes: "96x96" },
+    { rel: "icon", type: "image/svg+xml", href: `/assets/favicon/favicon.svg?v=${VCACHE}` },
+    { rel: "shortcut icon", href: `/assets/favicon/favicon.ico?v=${VCACHE}` },
   ].forEach(function (opt) {
     const l = document.createElement("link");
     l.rel = opt.rel;
