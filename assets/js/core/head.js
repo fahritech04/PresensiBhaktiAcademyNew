@@ -14,20 +14,24 @@
   referrer.content = "no-referrer";
   h.appendChild(referrer);
 
-  // Google Fonts preconnect
-  [{ href: "https://fonts.googleapis.com" }, { href: "https://fonts.gstatic.com", crossOrigin: "anonymous" }].forEach(function (opt) {
+  // Webfonts SELF-HOSTED (assets/fonts, latin subset) — preload supaya
+  // font jadi secepat mungkin + no flash berantakan (FOUT). Tidak lagi
+  // depend Google Fonts / gstatic (1 roundtrip kurang, nol referrer leak
+  // ke situs luar). Regras @font-face di assets/css/style.css.
+  [
+    { href: "/assets/fonts/inter-latin.woff2" },
+    { href: "/assets/fonts/bebas-latin.woff2" },
+    { href: "/assets/fonts/spacemono-400.woff2" },
+    { href: "/assets/fonts/spacemono-700.woff2" },
+  ].forEach(function (opt) {
     const l = document.createElement("link");
-    l.rel = "preconnect";
+    l.rel = "preload";
+    l.as = "font";
+    l.type = "font/woff2";
+    l.crossOrigin = "anonymous";
     l.href = opt.href;
-    if (opt.crossOrigin) l.crossOrigin = opt.crossOrigin;
     h.appendChild(l);
   });
-
-  // Google Fonts stylesheet
-  const f = document.createElement("link");
-  f.rel = "stylesheet";
-  f.href = "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap";
-  h.appendChild(f);
 
   // Favicons — injection via JS supaya hanya 1 tempat simpan (DRY).
   // ?v= cache-busting: browser caches favicon per-origin sangat intens;

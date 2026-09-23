@@ -34,6 +34,57 @@
 }
 
 /* =========================================================================
+   WEBFONT SELF-HOSTED — kurangi FOUT (flash "bold->normal").
+   Font simpan lokal di /assets/fonts (latin subset, dari Google Fonts via
+   css2 API, woff2). `font-display: swap` -> fallback tampil saat font
+   belum jadi (tetp dikiri normal), lalu swap saat font jadi — tanpa
+   roundtrip gstatic, jadi flash praktis tidak terlihat.
+   Inter (variable) = 1 file untuk semua weight 400/600/700.
+   ========================================================================= */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/inter-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/assets/fonts/inter-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/assets/fonts/inter-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Bebas Neue";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/bebas-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/spacemono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/assets/fonts/spacemono-700.woff2") format("woff2");
+}
+
+/* =========================================================================
    RESET & BASE
    ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
