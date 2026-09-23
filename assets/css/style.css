@@ -2100,6 +2100,17 @@ table.tbl td.mono {
   word-break: break-all;
 }
 
+/* Kartu Putra vs Putri — warna berbeda supaya dibedakan dari jauh.
+   Override sisa variabel --ink (banda atas/border) & --paper (banda bawah). */
+.ticket-putra {
+  --ink: #16587b;
+  --paper: #f5eedd;
+}
+.ticket-putri {
+  --ink: #7a2351;
+  --paper: #fbeef4;
+}
+
 /* =========================================================================
    PRINT
    ========================================================================= */
@@ -2143,27 +2154,27 @@ table.tbl td.mono {
     print-color-adjust: exact !important;
   }
   .ticket-top {
-    background: #16587b !important;
-    color: #f5eedd !important;
+    background: var(--ink) !important;
+    color: var(--paper) !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
   .ticket-top h3,
   .ticket-top .name {
-    color: #f5eedd !important;
+    color: var(--paper) !important;
   }
   .ticket-top .brand {
-    color: #f5eedd !important;
+    color: var(--paper) !important;
   }
   .ticket-bottom {
-    background: #f5eedd !important;
+    background: var(--paper) !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
   .ticket-bottom .code,
   .ticket-bottom .club,
   .ticket-bottom .meta {
-    color: #16587b !important;
+    color: var(--ink) !important;
   }
 }
 

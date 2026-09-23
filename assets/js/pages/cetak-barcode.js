@@ -110,7 +110,7 @@
     printArea.innerHTML = list
       .map(
         (s) => `
-      <div class="ticket">
+      <div class="ticket ${s.jenisKelamin === "Putri" ? "ticket-putri" : "ticket-putra"}">
         <div class="ticket-top">
           <div>
             <div class="brand">Bhakti Sebatung Academy</div>
