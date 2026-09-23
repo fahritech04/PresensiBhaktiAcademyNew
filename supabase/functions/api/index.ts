@@ -38,7 +38,8 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 //   ALLOWED_ORIGIN=https://bhaktisebatung.web.id,https://user.github.io
 function allowedOrigins(): string[] {
   const raw = (Deno.env.get("ALLOWED_ORIGIN") || "https://bhaktisebatung.web.id");
-  return raw.split(",").map((s) => s.trim().toLowerCase()).filter((s) => s !== "");
+  // Tolerant separator: comma O sis space (mis. user jenis type).
+  return raw.split(/[,\s]+/).map((s) => s.trim().toLowerCase()).filter((s) => s !== "");
 }
 
 function isAllowedOrigin(req: Request): boolean {
