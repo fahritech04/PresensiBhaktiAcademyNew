@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Dashboard &middot; Bhakti Sebatung Academy</title>
     <script src="/assets/js/core/head.js?v=20260923-1"></script>
-    <link rel="stylesheet" href="/assets/css/style.css?v=20260923-2" />
+    <link rel="stylesheet" href="/assets/css/style.css?v=20260923-4" />
   </head>
   <body>
     <div class="shell">
@@ -18,10 +18,17 @@
           <div class="ring-tile">
             <div class="ring-wrap">
               <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
-                <circle cx="60" cy="60" r="52" fill="none" stroke="#2A323F" stroke-width="12"></circle>
-                <circle id="ringProgress" cx="60" cy="60" r="52" fill="none" stroke="#E98A2E" stroke-width="12" stroke-dasharray="0 327" stroke-linecap="round"></circle>
+                <defs>
+                  <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#FFB32C" />
+                    <stop offset="100%" stop-color="#E98A2E" />
+                  </linearGradient>
+                </defs>
+                <circle cx="60" cy="60" r="52" fill="none" stroke="#1E3A52" stroke-width="13"></circle>
+                <circle id="ringProgress" cx="60" cy="60" r="52" fill="none" stroke="url(#ringGrad)" stroke-width="13" stroke-dasharray="0 327" stroke-linecap="round"></circle>
               </svg>
-              <div class="ring-num"><b id="ringPct">&ndash;</b><span>Persen Hadir</span></div>
+              <div class="ring-core"></div>
+              <div class="ring-num"><b id="ringPct">&ndash;</b><span>Hadir</span></div>
             </div>
             <div class="ring-info">
               <div class="label">Hari Ini</div>
