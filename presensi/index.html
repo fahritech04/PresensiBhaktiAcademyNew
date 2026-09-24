@@ -6,6 +6,56 @@
     <title>Riwayat Presensi &middot; Bhakti Sebatung Academy</title>
     <script src="/assets/js/core/head.js?v=20260923-3"></script>
     <link rel="stylesheet" href="/assets/css/style.css?v=20260923-8" />
+    <style>
+      .filter-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+        align-self: flex-end;
+      }
+      .seg-toggle {
+        display: flex;
+        gap: 8px;
+      }
+      @media screen and (max-width: 479px) {
+        .filter-actions {
+          width: 100%;
+          margin-left: 0;
+        }
+        .filter-actions .seg-toggle {
+          flex: 1;
+        }
+        .filter-actions .seg-toggle .btn {
+          flex: 1;
+          min-width: 0;
+          padding: 8px 6px;
+        }
+        .filter-actions #btnFilter {
+          flex: 1;
+          min-width: 0;
+          padding: 8px 6px;
+        }
+        .pagination {
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 8px;
+          row-gap: 10px;
+        }
+        .pagination #rowInfo {
+          flex: 1 1 100%;
+          text-align: center;
+          order: -1;
+        }
+        .pagination .btn {
+          flex: 1;
+          min-width: 0;
+        }
+        .pagination #btnExport {
+          flex: 1 1 100%;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="shell">
@@ -39,14 +89,12 @@
                   <option value="Telat">Telat</option>
                 </select>
               </div>
-              <div class="field mb-0" style="align-self: flex-end">
-                <button type="button" class="btn btn-primary btn-sm" id="btnFilter">Terapkan</button>
-              </div>
-              <div class="field mb-0" style="align-self: flex-end">
-                <div style="display:flex;gap:8px" role="group" aria-label="Mode tampilan">
+              <div class="filter-actions">
+                <div class="seg-toggle" role="group" aria-label="Mode tampilan">
                   <button type="button" class="btn btn-primary btn-sm" id="btnDetail">Detail</button>
                   <button type="button" class="btn btn-ghost btn-sm" id="btnRekap">Rekap</button>
                 </div>
+                <button type="button" class="btn btn-primary btn-sm" id="btnFilter">Terapkan</button>
               </div>
             </div>
           </div>
