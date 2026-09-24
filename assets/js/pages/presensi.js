@@ -4,6 +4,8 @@
   let currentRows = [];
   let total = 0;
   let page = 0;
+  let mode = "detail";
+  let rekapRows = [];
   const PAGE_SIZE = 500;
 
   const dari = document.getElementById("filterDari");
@@ -12,6 +14,14 @@
   const status = document.getElementById("filterStatus");
   const tableBody = document.getElementById("tableBody");
   const emptyState = document.getElementById("emptyState");
+  const rekapBody = document.getElementById("rekapBody");
+  const rekapEmpty = document.getElementById("rekapEmpty");
+  const detailWrap = document.getElementById("detailWrap");
+  const rekapWrap = document.getElementById("rekapWrap");
+  const btnDetail = document.getElementById("btnDetail");
+  const btnRekap = document.getElementById("btnRekap");
+  const btnExport = document.getElementById("btnExport");
+  const rowInfo = document.getElementById("rowInfo");
   const btnPrev = document.getElementById("btnPrev");
   const btnNext = document.getElementById("btnNext");
 
@@ -31,7 +41,9 @@
     });
     if (btnPrev) btnPrev.addEventListener("click", () => { if (page > 0) { page--; loadData(); } });
     if (btnNext) btnNext.addEventListener("click", () => { page++; loadData(); });
-    document.getElementById("btnExport").addEventListener("click", exportHTML);
+    btnExport.addEventListener("click", exportHTML);
+    btnDetail.addEventListener("click", () => setMode("detail"));
+    btnRekap.addEventListener("click", () => setMode("rekap"));
     await Promise.all([fillKelompok(), loadData()]);
   }
 
@@ -47,6 +59,10 @@
   }
 
   async function loadData() {
+    if (mode === "rekap") {
+      await loadRekap();
+      return;
+    }
     tableBody.innerHTML = UI.skeletonRows(5, 5);
     try {
       const data = await Api.call("getPresensiList", {
@@ -100,7 +116,80 @@
       .join("");
   }
 
+  function setMode(next) {
+    mode = next;
+    const isRekap = mode === "rekap";
+    btnDetail.classList.toggle("btn-primary", !isRekap);
+    btnDetail.classList.toggle("btn-ghost", isRekap);
+    btnRekap.classList.toggle("btn-primary", isRekap);
+    btnRekap.classList.toggle("btn-ghost", !isRekap);
+    detailWrap.style.display = isRekap ? "none" : "";
+    rekapWrap.style.display = isRekap ? "" : "none";
+    btnPrev.style.display = isRekap ? "none" : "";
+    btnNext.style.display = isRekap ? "none" : "";
+    rowInfo.style.display = isRekap ? "none" : "";
+    btnExport.innerHTML = isRekap ? "&darr; Unduh Rekap" : "&darr; Unduh Laporan";
+    page = 0;
+    loadData();
+  }
+
+  async function loadRekap() {
+    rekapBody.innerHTML = UI.skeletonRows(4, 4);
+    rekapEmpty.classList.add("hidden");
+    try {
+      const data = await Api.call("getPresensiList", {
+        dari: dari.value,
+        sampai: sampai.value,
+        kelompok: kelompok.value,
+        status: status.value,
+      });
+      rekapRows = data.rows || [];
+      renderRekap();
+    } catch (err) {
+      UI.toast(err.message, "error");
+      rekapBody.innerHTML = "";
+      rekapEmpty.classList.remove("hidden");
+    }
+  }
+
+  function groupRekap(rows) {
+    const map = new Map();
+    rows.forEach((r) => {
+      const nama = r.nama || "-";
+      if (!map.has(nama)) map.set(nama, { nama, hadir: 0, telat: 0 });
+      const entry = map.get(nama);
+      if (r.status === "Telat") entry.telat++;
+      else entry.hadir++;
+    });
+    return [...map.values()].sort((a, b) => a.nama.localeCompare(b.nama, "id"));
+  }
+
+  function renderRekap() {
+    if (!rekapRows.length) {
+      rekapBody.innerHTML = "";
+      rekapEmpty.classList.remove("hidden");
+      return;
+    }
+    rekapEmpty.classList.add("hidden");
+
+    rekapBody.innerHTML = groupRekap(rekapRows)
+      .map(
+        (r) => `
+      <tr>
+        <td class="cell-name">${UI.escapeHtml(r.nama)}</td>
+        <td><span class="tag tag-hadir">${r.hadir}</span></td>
+        <td><span class="tag tag-telat">${r.telat}</span></td>
+        <td class="mono">${r.hadir + r.telat}</td>
+      </tr>`,
+      )
+      .join("");
+  }
+
   async function exportHTML() {
+    if (mode === "rekap") {
+      await exportRekapHTML();
+      return;
+    }
     if (!total) {
       UI.toast("Tidak ada data untuk diunduh.", "error");
       return;
@@ -136,6 +225,110 @@
     a.click();
     URL.revokeObjectURL(url);
     UI.toast("Laporan berhasil dibuat! Buka file .html di browser, lalu cetak.", "success");
+  }
+
+  async function exportRekapHTML() {
+    if (!rekapRows.length) {
+      UI.toast("Tidak ada data untuk diunduh.", "error");
+      return;
+    }
+
+    UI.toast("Menyiapkan laporan rekap...", "success");
+    const periodeLabel = `${dari.value} s/d ${sampai.value}`;
+    const printDate = new Date().toLocaleString("id-ID", { dateStyle: "long", timeStyle: "short" });
+
+    const html = buildRekapReport(groupRekap(rekapRows), periodeLabel, printDate);
+
+    const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rekap_presensi_${dari.value}_${sampai.value}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    UI.toast("Laporan rekap berhasil dibuat! Buka file .html di browser, lalu cetak.", "success");
+  }
+
+  function buildRekapReport(rows, periodeLabel, printDate) {
+    const cntHadir = rows.reduce((s, r) => s + r.hadir, 0);
+    const cntTelat = rows.reduce((s, r) => s + r.telat, 0);
+
+    const bodyRows = rows
+      .map(
+        (r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${UI.escapeHtml(r.nama)}</td>
+          <td><span class="tag tag-hadir">${r.hadir}</span></td>
+          <td><span class="tag tag-telat">${r.telat}</span></td>
+          <td class="mono">${r.hadir + r.telat}</td>
+        </tr>`,
+      )
+      .join("");
+
+    return `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<title>Rekap Presensi — Bhakti Sebatung Academy</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #1a202c; font-size: 14px; }
+  .wrapper { max-width: 720px; margin: 0 auto; padding: 32px 16px; }
+  .header { margin-bottom: 24px; }
+  .header h1 { font-size: 22px; font-weight: 700; color: #0f172a; }
+  .header p { color: #64748b; font-size: 13px; margin-top: 4px; }
+  .meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .meta-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 20px; }
+  .meta-item .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
+  .meta-item .value { font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  thead { background: #0f172a; color: #fff; }
+  th { padding: 11px 14px; text-align: left; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13.5px; }
+  tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .tag-hadir { background: #d1fae5; color: #065f46; }
+  .tag-telat { background: #fee2e2; color: #991b1b; }
+  .mono { font-family: 'Courier New', monospace; }
+  .footer { margin-top: 20px; font-size: 12px; color: #94a3b8; text-align: center; }
+  @media print {
+    body { background: #fff; }
+    .wrapper { padding: 0; max-width: 100%; }
+    table { box-shadow: none; border: 1px solid #ddd; }
+    thead { background: #0f172a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <h1>&#128203; Rekap Presensi Latihan</h1>
+    <p>Bhakti Sebatung Academy &mdash; Dicetak pada ${UI.escapeHtml(printDate)}</p>
+  </div>
+  <div class="meta">
+    <div class="meta-item"><div class="label">Periode</div><div class="value" style="font-size:15px">${UI.escapeHtml(periodeLabel)}</div></div>
+    <div class="meta-item"><div class="label">Jumlah Siswa</div><div class="value">${rows.length}</div></div>
+    <div class="meta-item"><div class="label">Hadir</div><div class="value" style="color:#065f46">${cntHadir}</div></div>
+    <div class="meta-item"><div class="label">Telat</div><div class="value" style="color:#991b1b">${cntTelat}</div></div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nama Siswa</th>
+        <th>Hadir</th>
+        <th>Telat</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>${bodyRows}</tbody>
+  </table>
+  <div class="footer">Laporan ini dibuat otomatis oleh sistem Bhakti Sebatung Academy.</div>
+</div>
+</body>
+</html>`;
   }
 
   function buildPresensiReport(currentRows, periodeLabel, printDate) {
