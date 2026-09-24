@@ -1855,20 +1855,30 @@ table.tbl td.mono {
     font-size: 13px;
   }
   .bento {
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
   .bento > .num-tile {
-    padding: 14px 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px 16px;
+    padding: 16px 18px;
     border-radius: 12px;
   }
   .bento > .num-tile .label {
-    font-size: 10px;
-    letter-spacing: 0;
+    font-size: 12px;
+    letter-spacing: 0.02em;
     text-transform: none;
   }
+  .bento > .num-tile .num {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
   .bento > .num-tile .foot {
-    font-size: 10px;
-    line-height: 1.5;
+    grid-column: 1;
+    font-size: 11px;
+    line-height: 1.4;
   }
   .ring-tile {
     padding: 20px;
