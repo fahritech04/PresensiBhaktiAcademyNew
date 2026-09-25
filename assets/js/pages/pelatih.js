@@ -1,7 +1,6 @@
 (function () {
   UI.renderPage({ active: "pelatih", title: "Data Pelatih", desc: "Kelola pelatih & kode QR" });
   document.getElementById("viewHeadActions").innerHTML = `
-    <a class="btn btn-ghost btn-sm" href="/presensi-pelatih/">Riwayat Presensi</a>
     <button class="btn btn-primary btn-sm" id="btnTambah">+ Tambah Pelatih</button>`;
 
   let allPelatih = [];

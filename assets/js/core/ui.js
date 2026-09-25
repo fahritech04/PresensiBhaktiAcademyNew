@@ -36,7 +36,7 @@ const UI = (() => {
     { key: "iuran", href: "/iuran/", label: "Iuran", icon: ICONS.wallet },
     { key: "cetak", href: "/cetak-barcode/", label: "Cetak QR", icon: ICONS.cetak },
     { key: "pelatih", href: "/pelatih/", label: "Pelatih", icon: ICONS.pelatih },
-    { key: "presensi-pelatih", href: "/presensi-pelatih/", label: "Riwayat P.", icon: ICONS.history },
+    { key: "presensi-pelatih", href: "/presensi-pelatih/", label: "Riwayat Pelatih", icon: ICONS.history },
   ];
 
   /* ---------------------------- PAGE BOOT ---------------------------- */

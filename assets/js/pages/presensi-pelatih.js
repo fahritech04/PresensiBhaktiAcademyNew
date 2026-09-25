@@ -1,7 +1,5 @@
 (function () {
   UI.renderPage({ active: "presensi-pelatih", title: "Riwayat Presensi Pelatih", desc: "Rekap kehadiran pelatih" });
-  document.getElementById("viewHeadActions").innerHTML = `
-    <a class="btn btn-ghost btn-sm" href="/pelatih/">Data Pelatih</a>`;
 
   let currentRows = [];
   let total = 0;
