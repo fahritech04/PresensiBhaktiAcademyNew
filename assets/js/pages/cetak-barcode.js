@@ -13,6 +13,7 @@
   const filterJenisKelamin = document.getElementById("filterJenisKelamin");
   const checkAll = document.getElementById("checkAll");
   const thKategori = document.getElementById("thKategori");
+  const thNama = document.getElementById("thNama");
   const btnSiswa = document.getElementById("btnSiswa");
   const btnPelatih = document.getElementById("btnPelatih");
 
@@ -62,6 +63,11 @@
     if (mode === next) return;
     mode = next;
     selected.clear();
+    // Reset pratinjau kartu lama (siswa/pelatih) saat ganti mode.
+    const previewCard = document.getElementById("previewCard");
+    const printArea = document.getElementById("print-area");
+    if (previewCard) previewCard.style.display = "none";
+    if (printArea) printArea.innerHTML = "";
     const isSiswa = mode === "siswa";
     btnSiswa.classList.toggle("btn-primary", isSiswa);
     btnSiswa.classList.toggle("btn-ghost", !isSiswa);
@@ -71,6 +77,11 @@
     filterKelompok.style.display = isSiswa ? "" : "none";
     if (filterJenisKelamin) filterJenisKelamin.style.display = isSiswa ? "" : "none";
     if (thKategori) thKategori.textContent = isSiswa ? "Jenis Kelamin" : "Kategori";
+    if (thNama) thNama.textContent = isSiswa ? "Nama Siswa" : "Nama Pelatih";
+    // Cetak massal hanya untuk siswa. Pelatih = download satu-satu.
+    checkAll.style.display = isSiswa ? "" : "none";
+    const btnPrint = document.getElementById("btnPrint");
+    if (btnPrint) btnPrint.style.display = isSiswa ? "" : "none";
     checkAll.checked = false;
     searchInput.value = "";
     tableBody.innerHTML = UI.skeletonRows(4, 5);
@@ -108,7 +119,11 @@
       .map(
         (s) => `
       <tr>
-        <td><input type="checkbox" class="rowCheck" data-code="${UI.escapeHtml(s.barcode)}" ${selected.has(s.barcode) ? "checked" : ""}></td>
+        ${
+          isSiswa
+            ? `<td><input type="checkbox" class="rowCheck" data-code="${UI.escapeHtml(s.barcode)}" ${selected.has(s.barcode) ? "checked" : ""}></td>`
+            : `<td><button type="button" class="btn btn-ghost btn-icon" title="Download QR" data-download="${UI.escapeHtml(s.barcode)}">${UI.ICONS.download}</button></td>`
+        }
         <td class="mono">${UI.escapeHtml(s.barcode)}</td>
         <td class="cell-name">${UI.escapeHtml(s.nama)}</td>
         <td style="display: none">${UI.escapeHtml(s.kelompok || "-")}</td>
@@ -121,12 +136,18 @@
       )
       .join("");
 
-    tableBody.querySelectorAll(".rowCheck").forEach((cb) =>
-      cb.addEventListener("change", () => {
-        cb.checked ? selected.add(cb.dataset.code) : selected.delete(cb.dataset.code);
-        updateCount();
-      }),
-    );
+    if (isSiswa) {
+      tableBody.querySelectorAll(".rowCheck").forEach((cb) =>
+        cb.addEventListener("change", () => {
+          cb.checked ? selected.add(cb.dataset.code) : selected.delete(cb.dataset.code);
+          updateCount();
+        }),
+      );
+    } else {
+      tableBody.querySelectorAll("[data-download]").forEach((btn) =>
+        btn.addEventListener("click", () => downloadPelatihQR(allPelatih.find((p) => p.barcode === btn.dataset.download))),
+      );
+    }
     updateCount();
   }
 
@@ -195,6 +216,63 @@
 
     previewCard.scrollIntoView({ behavior: "smooth", block: "start" });
     setTimeout(() => window.print(), 350);
+  }
+
+  async function downloadPelatihQR(p) {
+    if (!p) return;
+    if (typeof QRCode === "undefined") {
+      UI.toast("Library QR Code gagal dimuat. Cek koneksi internet lalu coba lagi.", "error");
+      return;
+    }
+
+    const W = 620,
+      H = 800,
+      QR = 320;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+
+    const qr = document.createElement("canvas");
+    try {
+      await QRCode.toCanvas(qr, p.barcode, { width: QR, margin: 0, color: { dark: "#14181F", light: "#FFFFFF" } });
+    } catch (e) {
+      UI.toast("Gagal membuat QR code.", "error");
+      return;
+    }
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#64748B";
+    ctx.font = "600 18px 'Bebas Neue', Arial, sans-serif";
+    ctx.fillText("Bhakti Sebatung Academy", W / 2, 66);
+
+    ctx.fillStyle = "#14181F";
+    ctx.font = "700 46px 'Bebas Neue', Arial, sans-serif";
+    ctx.fillText(p.nama, W / 2, 150);
+
+    ctx.fillStyle = "#F49F04";
+    ctx.font = "600 22px 'Bebas Neue', Arial, sans-serif";
+    ctx.fillText("PELATIH", W / 2, 192);
+
+    ctx.drawImage(qr, (W - QR) / 2, 236, QR, QR);
+
+    ctx.fillStyle = "#14181F";
+    ctx.font = "500 24px 'Space Mono', monospace";
+    ctx.fillText(p.barcode, W / 2, 620);
+
+    ctx.fillStyle = "#64748B";
+    ctx.font = "400 16px Arial, sans-serif";
+    ctx.fillText("Tunjukkan kode QR ini saat scan presensi", W / 2, 668);
+
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = `QR-Pelatih-${p.nama.replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-") || p.barcode}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   function extractNumber(code) {
