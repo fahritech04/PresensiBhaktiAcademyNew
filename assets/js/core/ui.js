@@ -378,6 +378,27 @@ const UI = (() => {
     return "Rp" + num.toLocaleString("id-ID");
   }
 
+  /* ---------------------- DAFTAR HADIR HARI INI ---------------------- */
+  /** Render dua kolom (Siswa | Pelatih) side-by-side untuk "Presensi Hari Ini"
+   *  di halaman Scan. */
+  function todayAttendanceHtml(siswa, pelatih) {
+    const byTime = (a, b) => (a.waktu < b.waktu ? 1 : -1);
+    const row = (r) => `
+      <div class="today-row">
+        <div class="meta">
+          <b>${escapeHtml(r.nama)}</b>
+          <span class="tag ${r.status === "Telat" ? "tag-telat" : "tag-hadir"}">${escapeHtml(r.status)}</span>
+        </div>
+        <div class="t">${formatJam(r.waktu)}</div>
+      </div>`;
+    const col = (title, rows) => `
+      <div class="today-col">
+        <div class="today-col-head">${escapeHtml(title)}</div>
+        <div class="today-col-body">${rows.length ? rows.slice().sort(byTime).map(row).join("") : '<p class="muted">Belum ada</p>'}</div>
+      </div>`;
+    return `<div class="today-cols">${col("Siswa", siswa)}${col("Pelatih", pelatih)}</div>`;
+  }
+
   return {
     ICONS,
     renderPage,
@@ -396,5 +417,6 @@ const UI = (() => {
     optionsHtml,
     fillSelect,
     setButtonLoading,
+    todayAttendanceHtml,
   };
 })();

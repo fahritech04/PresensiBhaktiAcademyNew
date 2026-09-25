@@ -28,7 +28,8 @@
   let lastCode = null;
   let lastTime = 0;
   let processing = false;
-  let todayList = [];
+  let siswaToday = [];
+  let pelatihToday = [];
 
   init();
 
@@ -266,7 +267,7 @@
         waktu: data.waktu,
         status: isPelatih ? `Pelatih · ${data.status}` : data.status,
       });
-      if (!isPelatih) await loadToday();
+      await loadToday();
     } catch (err) {
       playBeep(false);
       showResult({ ok: false, message: err.message });
@@ -318,8 +319,12 @@
   async function loadToday() {
     try {
       const tanggal = selectedTanggal();
-      const data = await Api.call("getPresensiList", { tanggal });
-      todayList = data.rows || [];
+      const [siswaData, pelatihData] = await Promise.all([
+        Api.call("getPresensiList", { tanggal }),
+        Api.call("getPresensiPelatihList", { dari: tanggal, sampai: tanggal }),
+      ]);
+      siswaToday = siswaData.rows || [];
+      pelatihToday = pelatihData.rows || [];
       todayHeading.textContent = tanggal === UI.todayISO() ? "Presensi Hari Ini" : `Presensi ${UI.formatTanggal(tanggal)}`;
       renderTodayList();
     } catch (err) {
@@ -329,24 +334,11 @@
 
   function renderTodayList() {
     const box = document.getElementById("todayList");
-    document.getElementById("todayCount").textContent = todayList.length;
-    if (!todayList.length) {
+    document.getElementById("todayCount").textContent = siswaToday.length + pelatihToday.length;
+    if (!siswaToday.length && !pelatihToday.length) {
       box.innerHTML = '<div class="empty-state"><h3>Belum ada presensi</h3><p>Mulai scan untuk mencatat kehadiran.</p></div>';
       return;
     }
-    box.innerHTML = todayList
-      .slice()
-      .reverse()
-      .map(
-        (r) => `
-      <div class="today-row">
-        <div class="meta">
-          <b>${UI.escapeHtml(r.nama)}</b>
-          <span style="display: none">${UI.escapeHtml(r.kelompok || "-")}</span>
-        </div>
-        <div class="t">${UI.formatJam(r.waktu)}</div>
-      </div>`,
-      )
-      .join("");
+    box.innerHTML = UI.todayAttendanceHtml(siswaToday, pelatihToday);
   }
 })();
