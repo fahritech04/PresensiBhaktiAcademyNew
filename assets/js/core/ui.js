@@ -22,6 +22,8 @@ const UI = (() => {
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13a9 9 0 1 0 2.13-8.36L3 8"/><path d="M12 7v5l4 2"/></svg>',
     pelatih:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>',
+    menu:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>',
   };
 
   Object.keys(ICONS).forEach((key) => {
@@ -51,8 +53,8 @@ const UI = (() => {
     const session = Auth.getSession() || {};
 
     const topbarRoot = document.getElementById("topbar-root");
-    const tabbarRoot = document.getElementById("tabbar-root");
-    if (!topbarRoot || !tabbarRoot) return;
+    const navRoot = document.getElementById("tabbar-root");
+    if (!topbarRoot || !navRoot) return;
 
     topbarRoot.outerHTML = `
       <header class="topbar" id="topbar-root">
@@ -71,25 +73,50 @@ const UI = (() => {
           <div class="user-chip">
             <div><b>${escapeHtml(session.nama || "Admin")}</b><span>${escapeHtml(session.role || "Pengurus")}</span></div>
           </div>
+          <button type="button" class="nav-toggle" id="navToggle" aria-label="Buka menu" aria-expanded="false" aria-controls="navDrawer"><span class="nav-toggle-box"><span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span></span></button>
           <button type="button" class="btn btn-ghost btn-icon topbar-logout" id="btnLogout" title="Keluar" aria-label="Keluar">${ICONS.logout}</button>
         </div>
       </header>`;
 
-    tabbarRoot.outerHTML = `
-      <nav class="tabbar" id="tabbar-root" aria-label="Navigasi utama">
-        ${NAV_ITEMS.map((item) =>
-            item.fab
-              ? `
-          <a href="${item.href}" class="scan-fab ${item.key === active ? "active" : ""}"${item.key === active ? ' aria-current="page"' : ""}>
-            <span class="fab">${item.icon}</span><span>${item.label}</span>
-          </a>`
-              : `
-          <a href="${item.href}" class="${item.key === active ? "active" : ""}"${item.key === active ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`,
-          )
-          .join("")}
-      </nav>`;
+    navRoot.outerHTML = `
+      <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+        <div class="nav-drawer-backdrop" id="navDrawerBackdrop"></div>
+        <nav class="nav-drawer-panel" aria-label="Navigasi utama">
+          <div class="nav-drawer-head">
+            <span>Menu</span>
+            <button type="button" class="nav-drawer-close" id="navDrawerClose" aria-label="Tutup menu">${ICONS.x}</button>
+          </div>
+          ${NAV_ITEMS.map(
+            (item) => `
+            <a href="${item.href}" class="${item.key === active ? "active" : ""}"${item.key === active ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`,
+          ).join("")}
+        </nav>
+      </div>`;
 
     document.getElementById("btnLogout").addEventListener("click", () => Auth.logout());
+
+    // Nav drawer (mobile/tablet): buka/tutup + close via backdrop/tombol/Escape/link.
+    const navToggle = document.getElementById("navToggle");
+    const navDrawer = document.getElementById("navDrawer");
+    const openDrawer = () => {
+      navDrawer.classList.add("open");
+      navDrawer.setAttribute("aria-hidden", "false");
+      navToggle.setAttribute("aria-expanded", "true");
+      document.body.classList.add("nav-open");
+    };
+    const closeDrawer = () => {
+      navDrawer.classList.remove("open");
+      navDrawer.setAttribute("aria-hidden", "true");
+      navToggle.setAttribute("aria-expanded", "false");
+      document.body.classList.remove("nav-open");
+    };
+    navToggle.addEventListener("click", () => (navDrawer.classList.contains("open") ? closeDrawer() : openDrawer()));
+    document.getElementById("navDrawerBackdrop").addEventListener("click", closeDrawer);
+    document.getElementById("navDrawerClose").addEventListener("click", closeDrawer);
+    navDrawer.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeDrawer));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && navDrawer.classList.contains("open")) closeDrawer();
+    });
 
     // Fallback: kalau logo belum ada / gagal dimuat, balik ke kotak teks "BB"
     // supaya tidak muncul ikon gambar rusak.
