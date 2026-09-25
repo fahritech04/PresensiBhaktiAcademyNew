@@ -22,8 +22,6 @@ const UI = (() => {
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13a9 9 0 1 0 2.13-8.36L3 8"/><path d="M12 7v5l4 2"/></svg>',
     pelatih:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>',
-    menu:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>',
   };
 
   Object.keys(ICONS).forEach((key) => {
@@ -33,7 +31,7 @@ const UI = (() => {
   const NAV_ITEMS = [
     { key: "dashboard", href: "/dashboard/", label: "Dashboard", icon: ICONS.dashboard },
     { key: "siswa", href: "/siswa/", label: "Siswa", icon: ICONS.siswa },
-    { key: "scan", href: "/scan/", label: "Scan", icon: ICONS.scan, fab: true },
+    { key: "scan", href: "/scan/", label: "Scan", icon: ICONS.scan },
     { key: "presensi", href: "/presensi/", label: "Riwayat", icon: ICONS.presensi },
     { key: "iuran", href: "/iuran/", label: "Iuran", icon: ICONS.wallet },
     { key: "cetak", href: "/cetak-barcode/", label: "Cetak QR", icon: ICONS.cetak },
@@ -49,11 +47,17 @@ const UI = (() => {
     renderShell({ active, title, desc });
   }
 
+  /** Markup 1 item nav — dipakai topnav (desktop) & drawer (mobile). */
+  function navLinkHtml(item, active) {
+    const isActive = item.key === active;
+    return `<a href="${item.href}" class="${isActive ? "active" : ""}"${isActive ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`;
+  }
+
   function renderShell({ active, title, desc }) {
     const session = Auth.getSession() || {};
 
     const topbarRoot = document.getElementById("topbar-root");
-    const navRoot = document.getElementById("tabbar-root");
+    const navRoot = document.getElementById("nav-root");
     if (!topbarRoot || !navRoot) return;
 
     topbarRoot.outerHTML = `
@@ -64,10 +68,7 @@ const UI = (() => {
           <b>Bhakti Sebatung Academy</b>
         </a>
         <nav class="topnav" aria-label="Navigasi utama">
-          ${NAV_ITEMS.map(
-            (item) => `
-            <a href="${item.href}" class="${item.key === active ? "active" : ""}"${item.key === active ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`,
-          ).join("")}
+          ${NAV_ITEMS.map((item) => navLinkHtml(item, active)).join("")}
         </nav>
         <div class="topbar-right">
           <div class="user-chip">
@@ -86,10 +87,7 @@ const UI = (() => {
             <span>Menu</span>
             <button type="button" class="nav-drawer-close" id="navDrawerClose" aria-label="Tutup menu">${ICONS.x}</button>
           </div>
-          ${NAV_ITEMS.map(
-            (item) => `
-            <a href="${item.href}" class="${item.key === active ? "active" : ""}"${item.key === active ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`,
-          ).join("")}
+          ${NAV_ITEMS.map((item) => navLinkHtml(item, active)).join("")}
         </nav>
       </div>`;
 
