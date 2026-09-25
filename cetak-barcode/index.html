@@ -6,6 +6,12 @@
     <title>Cetak Kode QR &middot; Bhakti Sebatung Academy</title>
     <script src="/assets/js/core/head.js?v=20260923-3"></script>
     <link rel="stylesheet" href="/assets/css/style.css?v=20260923-9" />
+    <style>
+      .seg-toggle {
+        display: flex;
+        gap: 8px;
+      }
+    </style>
   </head>
   <body>
     <div class="shell">
@@ -17,6 +23,10 @@
         <div class="card data-card no-print section-gap">
           <div class="card-body">
             <div class="toolbar filter-toolbar">
+              <div class="seg-toggle" role="group" aria-label="Jenis kartu">
+                <button type="button" class="btn btn-primary btn-sm" id="btnSiswa">Siswa</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btnPelatih">Pelatih</button>
+              </div>
               <div class="search-input">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                   <circle cx="11" cy="11" r="8" />
@@ -44,7 +54,7 @@
                     <th scope="col">Kode QR</th>
                     <th scope="col">Nama Siswa</th>
                     <th scope="col" style="display: none">Kelompok</th>
-                    <th scope="col">Jenis Kelamin</th>
+                    <th scope="col" id="thKategori">Jenis Kelamin</th>
                   </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -76,9 +86,9 @@
 
     <script src="/assets/js/vendor/qrcode.min.js" defer></script>
     <script src="/assets/js/core/config.js?v=20260923-2" defer></script>
-    <script src="/assets/js/core/api.js?v=20260923-1" defer></script>
+    <script src="/assets/js/core/api.js?v=20260925-1" defer></script>
     <script src="/assets/js/core/auth.js?v=20260923-1" defer></script>
-    <script src="/assets/js/core/ui.js?v=20260923-2" defer></script>
-    <script src="/assets/js/pages/cetak-barcode.js?v=20260923-2" defer></script>
+    <script src="/assets/js/core/ui.js?v=20260925-1" defer></script>
+    <script src="/assets/js/pages/cetak-barcode.js?v=20260925-1" defer></script>
   </body>
 </html>

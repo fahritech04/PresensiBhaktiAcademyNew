@@ -20,6 +20,8 @@ const UI = (() => {
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>',
     history:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13a9 9 0 1 0 2.13-8.36L3 8"/><path d="M12 7v5l4 2"/></svg>',
+    pelatih:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>',
   };
 
   Object.keys(ICONS).forEach((key) => {
@@ -33,6 +35,8 @@ const UI = (() => {
     { key: "presensi", href: "/presensi/", label: "Riwayat", icon: ICONS.presensi },
     { key: "iuran", href: "/iuran/", label: "Iuran", icon: ICONS.wallet },
     { key: "cetak", href: "/cetak-barcode/", label: "Cetak QR", icon: ICONS.cetak },
+    { key: "pelatih", href: "/pelatih/", label: "Pelatih", icon: ICONS.pelatih },
+    { key: "presensi-pelatih", href: "/presensi-pelatih/", label: "Riwayat P.", icon: ICONS.history },
   ];
 
   /* ---------------------------- PAGE BOOT ---------------------------- */

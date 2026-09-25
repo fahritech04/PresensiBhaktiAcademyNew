@@ -1,9 +1,10 @@
 const Api = (() => {
   const CACHE_PREFIX = "__bsa_cache__";
-  const CACHE_TTL_SEC = { getKelompokList: 600, getSiswaList: 300 };
+  const CACHE_TTL_SEC = { getKelompokList: 600, getSiswaList: 300, getPelatihList: 300 };
   const MUTATING_ACTIONS = new Set([
     "addSiswa", "updateSiswa", "deleteSiswa",
     "scanPresensi", "tandaiIuran", "batalkanIuran", "updateIuran",
+    "addPelatih", "updatePelatih", "deletePelatih", "scanPresensiPelatih",
   ]);
 
   function getToken() {

@@ -1,5 +1,5 @@
 (function () {
-  UI.renderPage({ active: "scan", title: "Scan Presensi", desc: "Pindai kode QR siswa untuk mencatat kehadiran" });
+  UI.renderPage({ active: "scan", title: "Scan Presensi", desc: "Pindai kode QR siswa atau pelatih untuk mencatat kehadiran" });
 
   const manualInput = document.getElementById("manualInput");
   const btnManualSubmit = document.getElementById("btnManualSubmit");
@@ -251,8 +251,12 @@
     lastTime = now;
     processing = true;
 
+    const isPelatih = /^PLT-?/i.test(code);
+
     try {
-      const data = await Api.call("scanPresensi", { barcode: code, tanggal: selectedTanggal() });
+      const data = isPelatih
+        ? await Api.call("scanPresensiPelatih", { barcode: code })
+        : await Api.call("scanPresensi", { barcode: code, tanggal: selectedTanggal() });
       playBeep(true);
       showResult({
         ok: true,
@@ -260,9 +264,9 @@
         nama: data.nama,
         kelompok: data.kelompok,
         waktu: data.waktu,
-        status: data.status,
+        status: isPelatih ? `Pelatih · ${data.status}` : data.status,
       });
-      await loadToday();
+      if (!isPelatih) await loadToday();
     } catch (err) {
       playBeep(false);
       showResult({ ok: false, message: err.message });

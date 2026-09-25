@@ -1,7 +1,9 @@
 (function () {
-  UI.renderPage({ active: "cetak", title: "Cetak Kode QR", desc: "Buat kartu kode QR untuk dibagikan ke siswa" });
+  UI.renderPage({ active: "cetak", title: "Cetak Kode QR", desc: "Buat kartu kode QR untuk dibagikan ke siswa & pelatih" });
 
+  let mode = "siswa";
   let allSiswa = [];
+  let allPelatih = [];
   const selected = new Set();
 
   const tableBody = document.getElementById("tableBody");
@@ -10,6 +12,9 @@
   const filterKelompok = document.getElementById("filterKelompok");
   const filterJenisKelamin = document.getElementById("filterJenisKelamin");
   const checkAll = document.getElementById("checkAll");
+  const thKategori = document.getElementById("thKategori");
+  const btnSiswa = document.getElementById("btnSiswa");
+  const btnPelatih = document.getElementById("btnPelatih");
 
   init();
 
@@ -20,14 +25,24 @@
     bindEvents();
     tableBody.innerHTML = UI.skeletonRows(4, 5);
 
+    await loadData();
+  }
+
+  async function loadData() {
     try {
-      const data = await Api.cached("getSiswaList");
-      allSiswa = (data.siswa || []).filter((s) => s.status === "Aktif");
-      UI.fillSelect(filterKelompok, data.kelompok || [], "Semua Kelompok");
+      if (mode === "siswa") {
+        const data = await Api.cached("getSiswaList");
+        allSiswa = (data.siswa || []).filter((s) => s.status === "Aktif");
+        UI.fillSelect(filterKelompok, data.kelompok || [], "Semua Kelompok");
+      } else {
+        const data = await Api.cached("getPelatihList");
+        allPelatih = (data.pelatih || []).filter((p) => p.status === "Aktif");
+      }
       renderTable();
     } catch (err) {
       UI.toast(err.message, "error");
       tableBody.innerHTML = "";
+      emptyState.classList.remove("hidden");
     }
   }
 
@@ -36,13 +51,37 @@
     filterKelompok.addEventListener("change", renderTable);
     if (filterJenisKelamin) filterJenisKelamin.addEventListener("change", renderTable);
     checkAll.addEventListener("change", () => {
-      getVisibleRows().forEach((s) => (checkAll.checked ? selected.add(s.id) : selected.delete(s.id)));
+      getVisibleRows().forEach((s) => (checkAll.checked ? selected.add(s.barcode) : selected.delete(s.barcode)));
       renderTable();
     });
+    btnSiswa.addEventListener("click", () => switchMode("siswa"));
+    btnPelatih.addEventListener("click", () => switchMode("pelatih"));
+  }
+
+  async function switchMode(next) {
+    if (mode === next) return;
+    mode = next;
+    selected.clear();
+    const isSiswa = mode === "siswa";
+    btnSiswa.classList.toggle("btn-primary", isSiswa);
+    btnSiswa.classList.toggle("btn-ghost", !isSiswa);
+    btnPelatih.classList.toggle("btn-primary", !isSiswa);
+    btnPelatih.classList.toggle("btn-ghost", isSiswa);
+    // Kolom/filter khusus siswa disembunyikan untuk mode pelatih.
+    filterKelompok.style.display = isSiswa ? "" : "none";
+    if (filterJenisKelamin) filterJenisKelamin.style.display = isSiswa ? "" : "none";
+    if (thKategori) thKategori.textContent = isSiswa ? "Jenis Kelamin" : "Kategori";
+    checkAll.checked = false;
+    searchInput.value = "";
+    tableBody.innerHTML = UI.skeletonRows(4, 5);
+    await loadData();
   }
 
   function getVisibleRows() {
     const q = searchInput.value.trim().toLowerCase();
+    if (mode === "pelatih") {
+      return allPelatih.filter((p) => !q || p.nama.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q));
+    }
     const kel = filterKelompok.value;
     const jk = filterJenisKelamin ? filterJenisKelamin.value : "";
     return allSiswa.filter((s) => {
@@ -63,24 +102,28 @@
     }
     emptyState.classList.add("hidden");
 
+    const isSiswa = mode === "siswa";
+
     tableBody.innerHTML = rows
       .map(
         (s) => `
       <tr>
-        <td><input type="checkbox" class="rowCheck" data-id="${s.id}" ${selected.has(s.id) ? "checked" : ""}></td>
+        <td><input type="checkbox" class="rowCheck" data-code="${UI.escapeHtml(s.barcode)}" ${selected.has(s.barcode) ? "checked" : ""}></td>
         <td class="mono">${UI.escapeHtml(s.barcode)}</td>
         <td class="cell-name">${UI.escapeHtml(s.nama)}</td>
         <td style="display: none">${UI.escapeHtml(s.kelompok || "-")}</td>
-        <td>
-          <span class="tag ${s.jenisKelamin === "Putri" ? "tag-putri" : "tag-putra"}">${UI.escapeHtml(s.jenisKelamin || "Putra")}</span>
-        </td>
+        <td>${
+          isSiswa
+            ? `<span class="tag ${s.jenisKelamin === "Putri" ? "tag-putri" : "tag-putra"}">${UI.escapeHtml(s.jenisKelamin || "Putra")}</span>`
+            : '<span class="tag tag-neutral">Pelatih</span>'
+        }</td>
       </tr>`,
       )
       .join("");
 
     tableBody.querySelectorAll(".rowCheck").forEach((cb) =>
       cb.addEventListener("change", () => {
-        cb.checked ? selected.add(cb.dataset.id) : selected.delete(cb.dataset.id);
+        cb.checked ? selected.add(cb.dataset.code) : selected.delete(cb.dataset.code);
         updateCount();
       }),
     );
@@ -95,7 +138,7 @@
   }
 
   async function printSelected() {
-    const list = allSiswa.filter((s) => selected.has(s.id));
+    const list = (mode === "siswa" ? allSiswa : allPelatih).filter((s) => selected.has(s.barcode));
     if (!list.length) return;
 
     if (typeof QRCode === "undefined") {
@@ -103,14 +146,18 @@
       return;
     }
 
+    const isSiswa = mode === "siswa";
     const previewCard = document.getElementById("previewCard");
     const printArea = document.getElementById("print-area");
     previewCard.style.display = "block";
 
     printArea.innerHTML = list
-      .map(
-        (s) => `
-      <div class="ticket ${s.jenisKelamin === "Putri" ? "ticket-putri" : "ticket-putra"}">
+      .map((s) => {
+        const ticketClass = isSiswa ? (s.jenisKelamin === "Putri" ? "ticket-putri" : "ticket-putra") : "ticket-putra";
+        const metaLine = isSiswa ? `${UI.escapeHtml(s.barcode)} &middot; ${UI.escapeHtml(s.jenisKelamin || "Putra")}` : `${UI.escapeHtml(s.barcode)} &middot; Pelatih`;
+        const clubLine = isSiswa ? "Kartu Presensi Latihan.<br>Tunjukkan kode QR ini saat scan." : "Kartu Presensi Pelatih.<br>Tunjukkan kode QR ini saat scan.";
+        return `
+      <div class="ticket ${ticketClass}">
         <div class="ticket-top">
           <div>
             <div class="brand">Bhakti Sebatung Academy</div>
@@ -122,12 +169,12 @@
         <div class="ticket-bottom">
           <div class="qr-box"><canvas data-code="${UI.escapeHtml(s.barcode)}"></canvas></div>
           <div class="meta">
-            <div class="code">${UI.escapeHtml(s.barcode)} &middot; ${UI.escapeHtml(s.jenisKelamin || "Putra")}</div>
-            <div class="club">Kartu Presensi Latihan.<br>Tunjukkan kode QR ini saat scan.</div>
+            <div class="code">${metaLine}</div>
+            <div class="club">${clubLine}</div>
           </div>
         </div>
-      </div>`,
-      )
+      </div>`;
+      })
       .join("");
 
     printArea.querySelectorAll("canvas[data-code]").forEach((canvas) => {

@@ -200,6 +200,32 @@ const ACTIONS: Record<string, Handler> = {
     }),
 
   getRiwayatIuranSiswa: (p) => call("rpc_get_riwayat_iuran_siswa", { p_siswa_id: p.siswaId }),
+
+  getPelatihList: () => call("rpc_get_pelatih_list", {}),
+
+  addPelatih: (p) => call("rpc_add_pelatih", { p_nama: p.nama, p_status: p.status }),
+
+  updatePelatih: (p) => call("rpc_update_pelatih", { p_barcode: p.barcode, p_nama: p.nama, p_status: p.status }),
+
+  deletePelatih: (p) => call("rpc_delete_pelatih", { p_barcode: p.barcode }),
+
+  scanPresensiPelatih: (p) => call("rpc_scan_presensi_pelatih", { p_barcode: p.barcode }),
+
+  getPresensiPelatihList: (p) =>
+    call("rpc_get_presensi_pelatih_list", {
+      p_dari: orNull(p.dari),
+      p_sampai: orNull(p.sampai),
+      p_status: orNull(p.status),
+      p_limit: orNull(p.limit),
+      p_offset: orNull(p.offset),
+    }),
+
+  getPresensiPelatihRekap: (p) =>
+    call("rpc_get_presensi_pelatih_rekap", {
+      p_dari: orNull(p.dari),
+      p_sampai: orNull(p.sampai),
+      p_status: orNull(p.status),
+    }),
 };
 
 // IP request berjalan (per-isolate request berproses sequential, aman).

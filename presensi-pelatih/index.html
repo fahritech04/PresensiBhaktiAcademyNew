@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Riwayat Presensi &middot; Bhakti Sebatung Academy</title>
+    <title>Riwayat Presensi Pelatih &middot; Bhakti Sebatung Academy</title>
     <script src="/assets/js/core/head.js?v=20260923-3"></script>
     <link rel="stylesheet" href="/assets/css/style.css?v=20260923-9" />
     <style>
@@ -22,14 +22,6 @@
         .filter-actions {
           width: 100%;
           margin-left: 0;
-        }
-        .filter-actions .seg-toggle {
-          flex: 1;
-        }
-        .filter-actions .seg-toggle .btn {
-          flex: 1;
-          min-width: 0;
-          padding: 8px 6px;
         }
         .filter-actions #btnFilter {
           flex: 1;
@@ -50,9 +42,6 @@
         .pagination .btn {
           flex: 1;
           min-width: 0;
-        }
-        .pagination #btnExport {
-          flex: 1 1 100%;
         }
       }
     </style>
@@ -75,12 +64,6 @@
                 <label for="filterSampai">Sampai Tanggal</label>
                 <input type="date" class="input" id="filterSampai" />
               </div>
-              <div class="field mb-0" style="display: none">
-                <label for="filterKelompok">Kelompok</label>
-                <select class="input" id="filterKelompok">
-                  <option value="">Semua</option>
-                </select>
-              </div>
               <div class="field mb-0">
                 <label for="filterStatus">Status</label>
                 <select class="input" id="filterStatus">
@@ -100,13 +83,12 @@
           </div>
           <div class="card-body pad-0">
             <p class="table-hint no-print">Geser tabel untuk melihat kolom lainnya.</p>
-            <div class="table-wrap" id="detailWrap" tabindex="0" role="region" aria-label="Tabel riwayat presensi">
+            <div class="table-wrap" id="detailWrap" tabindex="0" role="region" aria-label="Tabel riwayat presensi pelatih">
               <table class="tbl">
                 <thead>
                   <tr>
                     <th scope="col">Tanggal</th>
-                    <th scope="col">Nama Siswa</th>
-                    <th scope="col" style="display: none">Kelompok</th>
+                    <th scope="col">Nama Pelatih</th>
                     <th scope="col">Jam</th>
                     <th scope="col">Status</th>
                   </tr>
@@ -118,11 +100,11 @@
               <h3>Tidak ada data</h3>
               <p>Coba ubah rentang tanggal atau filter lainnya.</p>
             </div>
-            <div class="table-wrap" id="rekapWrap" style="display:none" tabindex="0" role="region" aria-label="Rekap kehadiran siswa">
+            <div class="table-wrap" id="rekapWrap" style="display:none" tabindex="0" role="region" aria-label="Rekap kehadiran pelatih">
               <table class="tbl">
                 <thead>
                   <tr>
-                    <th scope="col">Nama Siswa</th>
+                    <th scope="col">Nama Pelatih</th>
                     <th scope="col">Hadir</th>
                     <th scope="col">Telat</th>
                     <th scope="col">Total</th>
@@ -139,7 +121,6 @@
               <button type="button" class="btn btn-ghost btn-sm" id="btnPrev">&larr; Sebelumnya</button>
               <span id="rowInfo">0 data</span>
               <button type="button" class="btn btn-ghost btn-sm" id="btnNext">Berikutnya &rarr;</button>
-              <button type="button" class="btn btn-ghost btn-sm" id="btnExport">&darr; Unduh Laporan</button>
             </div>
           </div>
         </div>
@@ -152,6 +133,6 @@
     <script src="/assets/js/core/api.js?v=20260925-1" defer></script>
     <script src="/assets/js/core/auth.js?v=20260923-1" defer></script>
     <script src="/assets/js/core/ui.js?v=20260925-1" defer></script>
-    <script src="/assets/js/pages/presensi.js?v=20260923-1" defer></script>
+    <script src="/assets/js/pages/presensi-pelatih.js?v=20260925-1" defer></script>
   </body>
 </html>

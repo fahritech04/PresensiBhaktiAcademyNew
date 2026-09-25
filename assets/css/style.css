@@ -704,7 +704,7 @@ textarea.input {
 /* --- Tab Bar (Mobile bottom nav) -------------------------------------- */
 .tabbar {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   position: fixed;
   left: 0;
   right: 0;
