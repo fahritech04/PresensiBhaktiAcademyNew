@@ -20,13 +20,13 @@ const Auth = (() => {
   function logout() {
     localStorage.removeItem(APP_CONFIG.SESSION_KEY);
     Api.clearCache();
-    window.location.href = "/";
+    window.location.href = "/login/";
   }
 
   /** Panggil di paling atas setiap halaman terproteksi. */
   function guardPage() {
     if (!isLoggedIn()) {
-      window.location.href = "/";
+      window.location.href = "/login/";
     }
   }
 

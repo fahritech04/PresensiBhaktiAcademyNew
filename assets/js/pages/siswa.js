@@ -1,7 +1,17 @@
 (function () {
-  UI.renderPage({ active: "siswa", title: "Data Siswa", desc: "Kelola anggota & kode QR" });
-  document.getElementById("viewHeadActions").innerHTML = `
+  UI.renderPage({ active: "siswa", title: "Data Siswa", desc: "Kelola anggota & kode QR", allowPublic: true });
+
+  const isPublic = !Auth.isLoggedIn();
+  if (isPublic) {
+    document.getElementById("viewHeadActions").innerHTML = "";
+    const thHp = document.getElementById("thHpOrtu");
+    const thAksi = document.getElementById("thAksi");
+    if (thHp) thHp.classList.add("hidden");
+    if (thAksi) thAksi.classList.add("hidden");
+  } else {
+    document.getElementById("viewHeadActions").innerHTML = `
     <button class="btn btn-primary btn-sm" id="btnTambah">+ Tambah Siswa</button>`;
+  }
 
   let allSiswa = [];
   let kelompokOptions = [];
@@ -20,15 +30,17 @@
 
   async function init() {
     bindEvents();
-    tableBody.innerHTML = UI.skeletonRows(6, 6);
+    tableBody.innerHTML = UI.skeletonRows(6, isPublic ? 4 : 6);
     await loadData();
   }
 
   function bindEvents() {
-    document.getElementById("btnTambah").addEventListener("click", () => openForm());
-    document.getElementById("btnCloseModal").addEventListener("click", () => UI.closeModal("siswaModal"));
-    document.getElementById("btnBatal").addEventListener("click", () => UI.closeModal("siswaModal"));
-    form.addEventListener("submit", onSubmit);
+    if (!isPublic) {
+      document.getElementById("btnTambah").addEventListener("click", () => openForm());
+      document.getElementById("btnCloseModal").addEventListener("click", () => UI.closeModal("siswaModal"));
+      document.getElementById("btnBatal").addEventListener("click", () => UI.closeModal("siswaModal"));
+      form.addEventListener("submit", onSubmit);
+    }
     searchInput.addEventListener("input", renderTable);
     filterKelompok.addEventListener("change", renderTable);
     filterStatus.addEventListener("change", renderTable);
@@ -89,20 +101,22 @@
         <td>
           <span class="tag ${s.jenisKelamin === "Putri" ? "tag-putri" : "tag-putra"}">${UI.escapeHtml(s.jenisKelamin || "Putra")}</span>
         </td>
-        <td>${s.hpOrtu ? `<a href="https://wa.me/${s.hpOrtu}" target="_blank" rel="noopener" class="wa-link">${UI.escapeHtml(s.hpOrtu)}</a>` : "<span class='muted'>-</span>"}</td>
+        ${isPublic ? "" : `<td>${s.hpOrtu ? `<a href="https://wa.me/${s.hpOrtu}" target="_blank" rel="noopener" class="wa-link">${UI.escapeHtml(s.hpOrtu)}</a>` : "<span class='muted'>-</span>"}</td>`}
         <td><span class="tag ${s.status === "Aktif" ? "tag-aktif" : "tag-nonaktif"}">${s.status}</span></td>
-        <td>
+        ${isPublic ? "" : `<td>
           <div class="row-actions">
             <button class="btn btn-ghost btn-icon" title="Edit" data-edit="${s.id}">${UI.ICONS.edit}</button>
             <button class="btn btn-ghost btn-icon" title="Hapus" data-delete="${s.id}">${UI.ICONS.trash}</button>
           </div>
-        </td>
+        </td>`}
       </tr>`,
       )
       .join("");
 
-    tableBody.querySelectorAll("[data-edit]").forEach((btn) => btn.addEventListener("click", () => openForm(allSiswa.find((s) => s.id === btn.dataset.edit))));
-    tableBody.querySelectorAll("[data-delete]").forEach((btn) => btn.addEventListener("click", () => onDelete(btn.dataset.delete)));
+    if (!isPublic) {
+      tableBody.querySelectorAll("[data-edit]").forEach((btn) => btn.addEventListener("click", () => openForm(allSiswa.find((s) => s.id === btn.dataset.edit))));
+      tableBody.querySelectorAll("[data-delete]").forEach((btn) => btn.addEventListener("click", () => onDelete(btn.dataset.delete)));
+    }
   }
 
   function openForm(siswa) {

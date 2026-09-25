@@ -29,8 +29,8 @@ const UI = (() => {
   });
 
   const NAV_ITEMS = [
-    { key: "dashboard", href: "/dashboard/", label: "Dashboard", icon: ICONS.dashboard },
-    { key: "siswa", href: "/siswa/", label: "Siswa", icon: ICONS.siswa },
+    { key: "dashboard", href: "/dashboard/", label: "Dashboard", icon: ICONS.dashboard, public: true },
+    { key: "siswa", href: "/siswa/", label: "Siswa", icon: ICONS.siswa, public: true },
     { key: "scan", href: "/scan/", label: "Scan", icon: ICONS.scan },
     { key: "presensi", href: "/presensi/", label: "Riwayat", icon: ICONS.presensi },
     { key: "iuran", href: "/iuran/", label: "Iuran", icon: ICONS.wallet },
@@ -42,8 +42,8 @@ const UI = (() => {
   /* ---------------------------- PAGE BOOT ---------------------------- */
   /** Boot standar halaman terproteksi: guard sesi + render shell navigasi.
    *  Urutan selalu sama di semua halaman (guard dulu, lalu shell). */
-  function renderPage({ active, title, desc }) {
-    Auth.guardPage();
+  function renderPage({ active, title, desc, allowPublic = false }) {
+    if (!allowPublic) Auth.guardPage();
     renderShell({ active, title, desc });
   }
 
@@ -55,6 +55,8 @@ const UI = (() => {
 
   function renderShell({ active, title, desc }) {
     const session = Auth.getSession() || {};
+    const loggedIn = Auth.isLoggedIn();
+    const visibleItems = NAV_ITEMS.filter((item) => loggedIn || item.public);
 
     const topbarRoot = document.getElementById("topbar-root");
     const navRoot = document.getElementById("nav-root");
@@ -68,14 +70,15 @@ const UI = (() => {
           <b>Bhakti Sebatung Academy</b>
         </a>
         <nav class="topnav" aria-label="Navigasi utama">
-          ${NAV_ITEMS.map((item) => navLinkHtml(item, active)).join("")}
+          ${visibleItems.map((item) => navLinkHtml(item, active)).join("")}
         </nav>
         <div class="topbar-right">
+          ${loggedIn ? `
           <div class="user-chip">
             <div><b>${escapeHtml(session.nama || "Admin")}</b><span>${escapeHtml(session.role || "Pengurus")}</span></div>
-          </div>
+          </div>` : ""}
           <button type="button" class="nav-toggle" id="navToggle" aria-label="Buka menu" aria-expanded="false" aria-controls="navDrawer"><span class="nav-toggle-box"><span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span></span></button>
-          <button type="button" class="btn btn-ghost btn-icon topbar-logout" id="btnLogout" title="Keluar" aria-label="Keluar">${ICONS.logout}</button>
+          ${loggedIn ? '<button type="button" class="btn btn-ghost btn-icon topbar-logout" id="btnLogout" title="Keluar" aria-label="Keluar">' + ICONS.logout + "</button>" : ""}
         </div>
       </header>`;
 
@@ -87,11 +90,12 @@ const UI = (() => {
             <span>Menu</span>
             <button type="button" class="nav-drawer-close" id="navDrawerClose" aria-label="Tutup menu">${ICONS.x}</button>
           </div>
-          ${NAV_ITEMS.map((item) => navLinkHtml(item, active)).join("")}
+          ${visibleItems.map((item) => navLinkHtml(item, active)).join("")}
         </nav>
       </div>`;
 
-    document.getElementById("btnLogout").addEventListener("click", () => Auth.logout());
+    const btnLogout = document.getElementById("btnLogout");
+    if (btnLogout) btnLogout.addEventListener("click", () => Auth.logout());
 
     // Nav drawer (mobile/tablet): buka/tutup + close via backdrop/tombol/Escape/link.
     const navToggle = document.getElementById("navToggle");

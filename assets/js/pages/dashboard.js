@@ -1,5 +1,13 @@
 (async function () {
-  UI.renderPage({ active: "dashboard", title: "Dashboard", desc: "Ringkasan Tampilan Presensi" });
+  UI.renderPage({ active: "dashboard", title: "Dashboard", desc: "Ringkasan Tampilan Presensi", allowPublic: true });
+
+  const isPublic = !Auth.isLoggedIn();
+  if (isPublic) {
+    const iuranCard = document.getElementById("iuranCard");
+    if (iuranCard) iuranCard.classList.add("hidden");
+    const btnScan = document.getElementById("btnScanSekarang");
+    if (btnScan) btnScan.classList.add("hidden");
+  }
 
   document.getElementById("todayDateLabel").textContent = UI.formatTanggal(new Date(), true);
   document.getElementById("todayTableBody").innerHTML = UI.skeletonRows(4, 3);

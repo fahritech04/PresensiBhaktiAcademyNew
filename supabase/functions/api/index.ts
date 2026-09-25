@@ -72,7 +72,7 @@ function clientIp(req: Request): string {
   return "";
 }
 
-const PUBLIC_ACTIONS = new Set(["login"]);
+const PUBLIC_ACTIONS = new Set(["login", "getDashboardStats", "getSiswaList"]);
 
 // Burst limiter memory (per-instance, best-effort — layer final di database).
 const LOGIN_LIMIT = { max: 30, windowMs: 60_000 };
@@ -121,9 +121,9 @@ type Handler = (payload: any, session: any) => Promise<unknown>;
 const ACTIONS: Record<string, Handler> = {
   login: (p) => call("rpc_login", { p_username: p.username, p_password: p.password, p_ip: CURRENT_IP }),
 
-  getDashboardStats: () => call("rpc_get_dashboard_stats", {}),
+  getDashboardStats: (_p, session) => call("rpc_get_dashboard_stats", { p_public: !session }),
 
-  getSiswaList: () => call("rpc_get_siswa_list", {}),
+  getSiswaList: (_p, session) => call("rpc_get_siswa_list", { p_public: !session }),
 
   addSiswa: (p) =>
     call("rpc_add_siswa", {
@@ -258,10 +258,14 @@ Deno.serve(async (req) => {
     const handler = ACTIONS[action];
     if (!handler) return jsonError(req, "Aksi tidak dikenali.", "UNKNOWN_ACTION");
 
+    // Verifikasi token bila ada (supaya admin yang login tetap dapat data penuh),
+    // tapi hanya wajib untuk aksi non-publik.
     let session: any = null;
-    if (!PUBLIC_ACTIONS.has(action)) {
+    if (token) {
       session = await call("rpc_verify_token", { p_token: token });
-      if (!session) return jsonError(req, "Sesi berakhir, silakan login kembali.", "AUTH_EXPIRED");
+    }
+    if (!PUBLIC_ACTIONS.has(action) && !session) {
+      return jsonError(req, "Sesi berakhir, silakan login kembali.", "AUTH_EXPIRED");
     }
 
     if (action === "login" && !allowLoginBurst(CURRENT_IP || "unknown")) {
