@@ -54,8 +54,9 @@ const UI = (() => {
   }
 
   function renderShell({ active, title, desc }) {
-    const session = Auth.getSession() || {};
-    const loggedIn = Auth.isLoggedIn();
+    const rawSession = Auth.getSession();
+    const loggedIn = !!rawSession;
+    const session = rawSession || {};
     const visibleItems = NAV_ITEMS.filter((item) => loggedIn || item.public);
 
     const topbarRoot = document.getElementById("topbar-root");
