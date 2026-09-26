@@ -19,6 +19,11 @@ const Auth = (() => {
 
   function logout() {
     localStorage.removeItem(APP_CONFIG.SESSION_KEY);
+    // Hapus juga sesi Supabase Auth (login Google) — supaya tidak auto-login
+    // lagi saat diarahkan ke /login/ (handleOAuthCallback baca sesi ini).
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("sb-"))
+      .forEach((k) => localStorage.removeItem(k));
     Api.clearCache();
     window.location.href = "/login/";
   }
@@ -44,5 +49,14 @@ const Auth = (() => {
     return data;
   }
 
-  return { saveSession, getSession, isLoggedIn, logout, guardPage, redirectIfLoggedIn, login };
+  /** Login pelatih via Google: kirim access_token Supabase Auth ke Edge Function
+   *  `loginGoogle`, lalu simpan session custom (role Pelatih). */
+  async function loginGoogle(accessToken) {
+    const data = await Api.call("loginGoogle", { accessToken });
+    Api.clearCache();
+    saveSession({ token: data.token, nama: data.nama, username: data.username, role: data.role });
+    return data;
+  }
+
+  return { saveSession, getSession, isLoggedIn, logout, guardPage, redirectIfLoggedIn, login, loginGoogle };
 })();

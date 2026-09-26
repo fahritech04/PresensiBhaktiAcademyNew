@@ -72,7 +72,19 @@ function clientIp(req: Request): string {
   return "";
 }
 
-const PUBLIC_ACTIONS = new Set(["login", "getDashboardStats", "getSiswaList"]);
+const PUBLIC_ACTIONS = new Set(["login", "loginGoogle", "getDashboardStats", "getSiswaList"]);
+
+// Aksi yang boleh dipanggil role "Pelatih" (whitelist deny-by-default).
+// Pelatih hanya scan siswa + baca data — TIDAK boleh scan pelatih, CRUD, iuran, rekap.
+const PELATIH_ACTIONS = new Set([
+  "scanPresensi",
+  "getPresensiList",
+  "getPresensiPelatihList",
+  "getSiswaList",
+  "getKelompokList",
+  "getPelatihList",
+  "getDashboardStats",
+]);
 
 // Burst limiter memory (per-instance, best-effort — layer final di database).
 const LOGIN_LIMIT = { max: 30, windowMs: 60_000 };
@@ -121,9 +133,27 @@ type Handler = (payload: any, session: any) => Promise<unknown>;
 const ACTIONS: Record<string, Handler> = {
   login: (p) => call("rpc_login", { p_username: p.username, p_password: p.password, p_ip: CURRENT_IP }),
 
-  getDashboardStats: (_p, session) => call("rpc_get_dashboard_stats", { p_public: !session }),
+  // Verifikasi access_token Supabase Auth (Google) -> find-or-create pelatih + session role Pelatih.
+  loginGoogle: async (p) => {
+    const accessToken = p.accessToken;
+    if (!accessToken) throw new Error("Token Google tidak valid.");
+    const { data, error } = await supabase.auth.getUser(accessToken);
+    if (error || !data.user) throw new Error("Sesi Google tidak valid atau kedaluwarsa.");
+    const user = data.user;
+    const nama = user.user_metadata?.full_name || user.user_metadata?.name ||
+      (user.email ? user.email.split("@")[0] : "Pelatih");
+    return call("rpc_login_google", {
+      p_auth_uid: user.id,
+      p_email: user.email || "",
+      p_nama: nama,
+    });
+  },
 
-  getSiswaList: (_p, session) => call("rpc_get_siswa_list", { p_public: !session }),
+  // p_public = true untuk non-admin (publik & pelatih) -> data disanitasi
+  // (tanpa PII di siswa, tanpa agregat iuran di dashboard).
+  getDashboardStats: (_p, session) => call("rpc_get_dashboard_stats", { p_public: !session || session.role === "Pelatih" }),
+
+  getSiswaList: (_p, session) => call("rpc_get_siswa_list", { p_public: !session || session.role === "Pelatih" }),
 
   addSiswa: (p) =>
     call("rpc_add_siswa", {
@@ -266,6 +296,11 @@ Deno.serve(async (req) => {
     }
     if (!PUBLIC_ACTIONS.has(action) && !session) {
       return jsonError(req, "Sesi berakhir, silakan login kembali.", "AUTH_EXPIRED");
+    }
+
+    // Role gate: pelatih hanya boleh aksi dalam whitelist PELATIH_ACTIONS.
+    if (session && session.role === "Pelatih" && !PELATIH_ACTIONS.has(action)) {
+      return jsonError(req, "Aksi tidak diizinkan untuk pelatih.", "FORBIDDEN");
     }
 
     if (action === "login" && !allowLoginBurst(CURRENT_IP || "unknown")) {

@@ -1,10 +1,15 @@
 (async function () {
   UI.renderPage({ active: "dashboard", title: "Dashboard", desc: "Ringkasan Tampilan Presensi", allowPublic: true });
 
-  const isPublic = !Auth.isLoggedIn();
-  if (isPublic) {
+  const session = Auth.getSession();
+  const isPublic = !session;
+  const isPelatih = !!(session && session.role === "Pelatih");
+  // Pelatih: tanpa card iuran (data keuangan), tapi tetap boleh lihat tombol scan.
+  if (isPublic || isPelatih) {
     const iuranCard = document.getElementById("iuranCard");
     if (iuranCard) iuranCard.classList.add("hidden");
+  }
+  if (isPublic) {
     const btnScan = document.getElementById("btnScanSekarang");
     if (btnScan) btnScan.classList.add("hidden");
   }

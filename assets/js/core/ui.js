@@ -34,11 +34,11 @@ const UI = (() => {
     { key: "dashboard", href: "/dashboard/", label: "Dashboard", icon: ICONS.dashboard, public: true },
     { key: "siswa", href: "/siswa/", label: "Siswa", icon: ICONS.siswa, public: true },
     { key: "scan", href: "/scan/", label: "Scan", icon: ICONS.scan },
-    { key: "presensi", href: "/presensi/", label: "Riwayat", icon: ICONS.presensi },
-    { key: "iuran", href: "/iuran/", label: "Iuran", icon: ICONS.wallet },
-    { key: "cetak", href: "/cetak-barcode/", label: "Cetak QR", icon: ICONS.cetak },
-    { key: "pelatih", href: "/pelatih/", label: "Pelatih", icon: ICONS.pelatih },
-    { key: "presensi-pelatih", href: "/presensi-pelatih/", label: "Riwayat Pelatih", icon: ICONS.history },
+    { key: "presensi", href: "/presensi/", label: "Riwayat", icon: ICONS.presensi, adminOnly: true },
+    { key: "iuran", href: "/iuran/", label: "Iuran", icon: ICONS.wallet, adminOnly: true },
+    { key: "cetak", href: "/cetak-barcode/", label: "Cetak QR", icon: ICONS.cetak, adminOnly: true },
+    { key: "pelatih", href: "/pelatih/", label: "Pelatih", icon: ICONS.pelatih, adminOnly: true },
+    { key: "presensi-pelatih", href: "/presensi-pelatih/", label: "Riwayat Pelatih", icon: ICONS.history, adminOnly: true },
   ];
 
   /* ---------------------------- PAGE BOOT ---------------------------- */
@@ -59,7 +59,13 @@ const UI = (() => {
     const rawSession = Auth.getSession();
     const loggedIn = !!rawSession;
     const session = rawSession || {};
-    const visibleItems = NAV_ITEMS.filter((item) => loggedIn || item.public);
+    const isPelatih = loggedIn && session.role === "Pelatih";
+    const visibleItems = NAV_ITEMS.filter((item) => {
+      if (item.public) return true; // dashboard & siswa selalu tampil
+      if (!loggedIn) return false;
+      if (isPelatih) return !item.adminOnly; // pelatih: sembunyikan menu admin
+      return true; // admin: semua
+    });
 
     const topbarRoot = document.getElementById("topbar-root");
     const navRoot = document.getElementById("nav-root");

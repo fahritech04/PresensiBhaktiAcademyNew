@@ -1,8 +1,11 @@
 (function () {
   UI.renderPage({ active: "siswa", title: "Data Siswa", desc: "Kelola anggota & kode QR", allowPublic: true });
 
-  const isPublic = !Auth.isLoggedIn();
-  if (isPublic) {
+  const session = Auth.getSession();
+  const isPublic = !session;
+  const isPelatih = !!(session && session.role === "Pelatih");
+  const readOnly = isPublic || isPelatih; // pelatih = read-only (tanpa tambah/edit/hapus)
+  if (readOnly) {
     document.getElementById("viewHeadActions").innerHTML = "";
     const thHp = document.getElementById("thHpOrtu");
     const thAksi = document.getElementById("thAksi");
@@ -30,12 +33,12 @@
 
   async function init() {
     bindEvents();
-    tableBody.innerHTML = UI.skeletonRows(6, isPublic ? 4 : 6);
+    tableBody.innerHTML = UI.skeletonRows(6, readOnly ? 4 : 6);
     await loadData();
   }
 
   function bindEvents() {
-    if (!isPublic) {
+    if (!readOnly) {
       document.getElementById("btnTambah").addEventListener("click", () => openForm());
       document.getElementById("btnCloseModal").addEventListener("click", () => UI.closeModal("siswaModal"));
       document.getElementById("btnBatal").addEventListener("click", () => UI.closeModal("siswaModal"));
@@ -101,9 +104,9 @@
         <td>
           <span class="tag ${s.jenisKelamin === "Putri" ? "tag-putri" : "tag-putra"}">${UI.escapeHtml(s.jenisKelamin || "Putra")}</span>
         </td>
-        ${isPublic ? "" : `<td>${s.hpOrtu ? `<a href="https://wa.me/${s.hpOrtu}" target="_blank" rel="noopener" class="wa-link">${UI.escapeHtml(s.hpOrtu)}</a>` : "<span class='muted'>-</span>"}</td>`}
+        ${readOnly ? "" : `<td>${s.hpOrtu ? `<a href="https://wa.me/${s.hpOrtu}" target="_blank" rel="noopener" class="wa-link">${UI.escapeHtml(s.hpOrtu)}</a>` : "<span class='muted'>-</span>"}</td>`}
         <td><span class="tag ${s.status === "Aktif" ? "tag-aktif" : "tag-nonaktif"}">${s.status}</span></td>
-        ${isPublic ? "" : `<td>
+        ${readOnly ? "" : `<td>
           <div class="row-actions">
             <button class="btn btn-ghost btn-icon" title="Edit" data-edit="${s.id}">${UI.ICONS.edit}</button>
             <button class="btn btn-ghost btn-icon" title="Hapus" data-delete="${s.id}">${UI.ICONS.trash}</button>
@@ -113,7 +116,7 @@
       )
       .join("");
 
-    if (!isPublic) {
+    if (!readOnly) {
       tableBody.querySelectorAll("[data-edit]").forEach((btn) => btn.addEventListener("click", () => openForm(allSiswa.find((s) => s.id === btn.dataset.edit))));
       tableBody.querySelectorAll("[data-delete]").forEach((btn) => btn.addEventListener("click", () => onDelete(btn.dataset.delete)));
     }

@@ -299,6 +299,31 @@
       .academy-login #btnLogin > svg { width: 18px; height: 18px; transition: transform 180ms ease; }
       .academy-login #btnLogin:disabled { cursor: wait; opacity: 0.7; transform: none; }
       .academy-login #btnLogin:disabled > svg { display: none; }
+      .academy-login .login-divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 18px 0 14px;
+        color: #8aa0ac;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .academy-login .login-divider::before,
+      .academy-login .login-divider::after { content: ''; flex: 1; height: 1px; background: #e6ecef; }
+      .academy-login .btn-google {
+        min-height: 52px;
+        border-radius: 11px;
+        border: 1px solid #d8e3e9;
+        background: #fff;
+        color: #26485c;
+        font-weight: 600;
+        gap: 12px;
+        transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+      }
+      .academy-login .btn-google:hover:not(:disabled) { background: #f7fafc; border-color: #b7ccd8; box-shadow: 0 5px 14px #0c354b12; }
+      .academy-login .btn-google:disabled { cursor: wait; opacity: 0.7; }
+      .academy-login .google-hint { margin: 12px 0 0; font-size: 11px; color: #8aa0ac; }
       .academy-login .login-foot { margin: 23px 0 0; padding-top: 21px; border-top: 1px solid #e6ecef; color: #647987; font-size: 11px; line-height: 1.8; }
       .academy-login .login-foot span { display: block; color: #284f65; }
       .academy-login .login-bottom {
@@ -552,6 +577,19 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6" /></svg>
           </button>
 
+          <div class="login-divider" role="separator" aria-label="atau"><span>atau</span></div>
+
+          <button type="button" class="btn btn-google btn-block" id="btnGoogleLogin">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18A10.97 10.97 0 0 0 1 12c0 1.77.42 3.45 1.18 4.94l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span id="btnGoogleText">Masuk dengan Google</span>
+          </button>
+          <p class="google-hint">Khusus pelatih. Admin tetap lewat form di atas.</p>
+
           <p class="login-foot">Lupa akses?<span>Hubungi pengurus utama akademi.</span></p>
         </form>
       </main>
@@ -605,8 +643,8 @@
     </script>
     <script src="/assets/js/core/config.js?v=20260923-2" defer></script>
     <script src="/assets/js/core/api.js?v=20260925-1" defer></script>
-    <script src="/assets/js/core/auth.js?v=20260925-1" defer></script>
-    <script src="/assets/js/core/ui.js?v=20260925-1" defer></script>
-    <script src="/assets/js/pages/login.js?v=20260916-2" defer></script>
+    <script src="/assets/js/core/auth.js?v=20260926-2" defer></script>
+    <script src="/assets/js/core/ui.js?v=20260926-1" defer></script>
+    <script src="/assets/js/pages/login.js?v=20260926-1" defer></script>
   </body>
 </html>
