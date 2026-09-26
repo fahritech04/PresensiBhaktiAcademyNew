@@ -1,4 +1,18 @@
-(function () {
+(async function () {
+  if (Auth.hasOAuthCallback && Auth.hasOAuthCallback()) {
+    try {
+      await Auth.handleOAuthLogin();
+    } catch (err) {
+      alert(err.message || "Gagal memproses login Google.");
+      window.location.replace("/login/");
+      return;
+    } finally {
+      document.documentElement.classList.remove("oauth-processing");
+      const overlay = document.getElementById("scanOAuthLoading");
+      if (overlay) overlay.remove();
+    }
+  }
+
   UI.renderPage({ active: "scan", title: "Scan Presensi", desc: "Pindai kode QR siswa atau pelatih untuk mencatat kehadiran" });
 
   const manualInput = document.getElementById("manualInput");

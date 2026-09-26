@@ -28,17 +28,75 @@ const Auth = (() => {
     window.location.href = "/login/";
   }
 
-  /** Panggil di paling atas setiap halaman terproteksi. */
-  function guardPage() {
-    if (!isLoggedIn()) {
-      window.location.href = "/login/";
+  function hasOAuthCallback() {
+    const h = window.location.hash || "";
+    const s = window.location.search || "";
+    return h.includes("access_token=") || h.includes("error=") || s.includes("code=") || s.includes("error=");
+  }
+
+  function getOAuthAccessTokenFromUrl() {
+    try {
+      if (window.location.hash) {
+        const hash = window.location.hash.startsWith("#") ? window.location.hash.substring(1) : window.location.hash;
+        const params = new URLSearchParams(hash);
+        const token = params.get("access_token");
+        if (token) return token;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  async function resolveOAuthToken() {
+    const directToken = getOAuthAccessTokenFromUrl();
+    if (directToken) return directToken;
+    try {
+      const mod = await import("https://esm.sh/@supabase/supabase-js@2.45.4");
+      const client = mod.createClient(APP_CONFIG.SUPABASE_URL, APP_CONFIG.SUPABASE_ANON_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+      });
+      const { data } = await client.auth.getSession();
+      return (data && data.session && data.session.access_token) || null;
+    } catch (e) {
+      return null;
     }
   }
 
-  /** Panggil di halaman login: jika sudah login, langsung ke dashboard. */
+  async function handleOAuthLogin() {
+    if (!hasOAuthCallback()) return null;
+    const token = await resolveOAuthToken();
+    if (!token) {
+      const hashParams = new URLSearchParams((window.location.hash || "").replace(/^#/, ""));
+      const queryParams = new URLSearchParams(window.location.search || "");
+      const errorDesc = hashParams.get("error_description") || queryParams.get("error_description");
+      if (errorDesc) throw new Error(decodeURIComponent(errorDesc).replace(/\+/g, " "));
+      throw new Error("Token autentikasi Google tidak ditemukan.");
+    }
+    const session = await loginGoogle(token);
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+    return session;
+  }
+
+  /** Panggil di paling atas setiap halaman terproteksi. */
+  function guardPage() {
+    if (!isLoggedIn()) {
+      if (hasOAuthCallback()) {
+        return; // Callback OAuth sedang diproses di halaman ini
+      }
+      window.location.replace("/login/");
+    }
+  }
+
+  /** Panggil di halaman login: jika sudah login, langsung ke dashboard atau scan. */
   function redirectIfLoggedIn() {
     if (isLoggedIn()) {
-      window.location.href = "/dashboard/";
+      const session = getSession();
+      if (session && session.role === "Pelatih") {
+        window.location.replace("/scan/");
+      } else {
+        window.location.replace("/dashboard/");
+      }
     }
   }
 
@@ -58,5 +116,17 @@ const Auth = (() => {
     return data;
   }
 
-  return { saveSession, getSession, isLoggedIn, logout, guardPage, redirectIfLoggedIn, login, loginGoogle };
+  return {
+    saveSession,
+    getSession,
+    isLoggedIn,
+    logout,
+    guardPage,
+    redirectIfLoggedIn,
+    login,
+    loginGoogle,
+    hasOAuthCallback,
+    getOAuthAccessTokenFromUrl,
+    handleOAuthLogin,
+  };
 })();

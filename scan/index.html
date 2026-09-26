@@ -6,8 +6,64 @@
     <title>Scan Presensi &middot; Bhakti Sebatung Academy</title>
     <script src="/assets/js/core/head.js?v=20260923-3"></script>
     <link rel="stylesheet" href="/assets/css/style.css?v=20260923-9" />
+    <script>
+      (function () {
+        if (
+          (window.location.hash && (window.location.hash.indexOf("access_token=") !== -1 || window.location.hash.indexOf("error=") !== -1)) ||
+          (window.location.search && (window.location.search.indexOf("code=") !== -1 || window.location.search.indexOf("error=") !== -1))
+        ) {
+          document.documentElement.classList.add("oauth-processing");
+        }
+      })();
+    </script>
+    <style>
+      #scanOAuthLoading {
+        display: none;
+      }
+      html.oauth-processing #scanOAuthLoading {
+        display: flex !important;
+        position: fixed;
+        inset: 0;
+        z-index: 999999;
+        background: radial-gradient(ellipse at 15% 0%, #1c6280 0%, transparent 58%), #0c354b;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        color: #fff;
+      }
+      .scan-oauth-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #ffffff24;
+        border-top-color: #ffb32c;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 20px;
+      }
+      .scan-oauth-title {
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0 0 8px;
+        letter-spacing: -0.02em;
+      }
+      .scan-oauth-desc {
+        color: #b0c9d6;
+        font-size: 14px;
+        margin: 0;
+        max-width: 320px;
+        line-height: 1.6;
+      }
+    </style>
   </head>
   <body class="scan-page">
+    <div id="scanOAuthLoading" aria-live="polite">
+      <div class="scan-oauth-spinner"></div>
+      <h3 class="scan-oauth-title">Menyiapkan Akses Pelatih...</h3>
+      <p class="scan-oauth-desc">Sedang menghubungkan akun Google Anda ke sistem presensi.</p>
+    </div>
     <div class="shell">
       <div id="topbar-root"></div>
 
@@ -98,8 +154,8 @@
     <script src="/assets/js/vendor/html5-qrcode.min.js" defer></script>
     <script src="/assets/js/core/config.js?v=20260923-2" defer></script>
     <script src="/assets/js/core/api.js?v=20260925-1" defer></script>
-    <script src="/assets/js/core/auth.js?v=20260926-2" defer></script>
+    <script src="/assets/js/core/auth.js?v=20260926-4" defer></script>
     <script src="/assets/js/core/ui.js?v=20260926-1" defer></script>
-    <script src="/assets/js/pages/scan.js?v=20260925-1" defer></script>
+    <script src="/assets/js/pages/scan.js?v=20260926-2" defer></script>
   </body>
 </html>

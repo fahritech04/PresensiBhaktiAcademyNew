@@ -7,6 +7,27 @@
     <link rel="preload" as="image" href="/assets/img/foto_academy.jpg" />
     <script src="/assets/js/core/head.js?v=20260923-3"></script>
     <link rel="stylesheet" href="/assets/css/style.css?v=20260923-9" />
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem("bsa_session");
+          if (raw) {
+            var s = JSON.parse(raw);
+            if (s && s.token) {
+              window.location.replace(s.role === "Pelatih" ? "/scan/" : "/dashboard/");
+              return;
+            }
+          }
+        } catch (e) {}
+
+        if (
+          (window.location.hash && (window.location.hash.indexOf("access_token=") !== -1 || window.location.hash.indexOf("error=") !== -1)) ||
+          (window.location.search && (window.location.search.indexOf("code=") !== -1 || window.location.search.indexOf("error=") !== -1))
+        ) {
+          document.documentElement.classList.add("oauth-processing");
+        }
+      })();
+    </script>
     <style>
       /* Page-local presentation; shared styles and login behavior stay unchanged. */
       .academy-login {
@@ -326,6 +347,41 @@
       .academy-login .google-hint { margin: 12px 0 0; font-size: 11px; color: #8aa0ac; }
       .academy-login .login-foot { margin: 23px 0 0; padding-top: 21px; border-top: 1px solid #e6ecef; color: #647987; font-size: 11px; line-height: 1.8; }
       .academy-login .login-foot span { display: block; color: #284f65; }
+      /* State saat proses Google OAuth callback: cegah flash form login */
+      #oauthLoading { display: none; }
+      html.oauth-processing #loginForm > *:not(#oauthLoading):not(#loginError) { display: none !important; }
+      html.oauth-processing #oauthLoading {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 44px 16px;
+        min-height: 280px;
+      }
+      .oauth-spinner {
+        width: 44px;
+        height: 44px;
+        border: 3.5px solid #e2edf2;
+        border-top-color: var(--court-orange);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 20px;
+      }
+      .oauth-title {
+        color: #103b52;
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0 0 8px;
+        letter-spacing: -0.02em;
+      }
+      .oauth-desc {
+        color: #657b88;
+        font-size: 13px;
+        line-height: 1.6;
+        margin: 0;
+        max-width: 260px;
+      }
       .academy-login .login-bottom {
         position: relative;
         display: flex;
@@ -549,6 +605,12 @@
         </section>
 
         <form class="login-panel" id="loginForm" aria-labelledby="loginTitle" tabindex="-1" novalidate>
+          <div class="oauth-loading" id="oauthLoading" aria-live="polite">
+            <div class="oauth-spinner"></div>
+            <h3 class="oauth-title">Menghubungkan Akun Google...</h3>
+            <p class="oauth-desc">Mohon tunggu sebentar, sedang menyiapkan akses pelatih.</p>
+          </div>
+
           <div class="panel-kicker">
             <span>KHUSUS ADMIN</span>
           </div>
@@ -643,8 +705,8 @@
     </script>
     <script src="/assets/js/core/config.js?v=20260923-2" defer></script>
     <script src="/assets/js/core/api.js?v=20260925-1" defer></script>
-    <script src="/assets/js/core/auth.js?v=20260926-2" defer></script>
+    <script src="/assets/js/core/auth.js?v=20260926-4" defer></script>
     <script src="/assets/js/core/ui.js?v=20260926-1" defer></script>
-    <script src="/assets/js/pages/login.js?v=20260926-1" defer></script>
+    <script src="/assets/js/pages/login.js?v=20260926-2" defer></script>
   </body>
 </html>

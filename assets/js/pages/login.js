@@ -45,7 +45,7 @@ function bindAdminForm() {
 
     try {
       await Auth.login(username, password);
-      window.location.href = "/dashboard/";
+      window.location.replace("/dashboard/");
     } catch (err) {
       errBox.textContent = err.message || "Username atau password salah.";
       errBox.classList.add("show");
@@ -60,29 +60,39 @@ function bindGoogleLogin() {
   if (!btn) return;
   btn.addEventListener("click", async () => {
     btn.disabled = true;
+    const btnGoogleText = document.getElementById("btnGoogleText");
+    if (btnGoogleText) btnGoogleText.innerHTML = '<span class="spin-sm"></span> Menghubungkan...';
     try {
       const supabase = await getSupabaseClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin + "/login/" },
+        options: { redirectTo: window.location.origin + "/scan/" },
       });
       if (error) throw error;
     } catch (err) {
       btn.disabled = false;
+      if (btnGoogleText) btnGoogleText.textContent = "Masuk dengan Google";
       UI.toast(err.message || "Gagal memulai login Google.", "error");
     }
   });
 }
 
 async function handleOAuthCallback() {
+  if (!Auth.hasOAuthCallback()) return;
+
+  const errBox = document.getElementById("loginError");
+
   try {
-    const supabase = await getSupabaseClient();
-    const { data } = await supabase.auth.getSession();
-    const accessToken = data && data.session && data.session.access_token;
-    if (!accessToken) return; // bukan halaman callback OAuth
-    await Auth.loginGoogle(accessToken);
-    window.location.href = "/scan/";
+    await Auth.handleOAuthLogin();
+    window.location.replace("/scan/");
   } catch (err) {
-    /* bukan callback / token tidak valid: biarkan halaman login tetap tampil */
+    document.documentElement.classList.remove("oauth-processing");
+    if (errBox) {
+      errBox.textContent = err.message || "Gagal masuk dengan Google. Silakan coba lagi.";
+      errBox.classList.add("show");
+    }
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
   }
 }
