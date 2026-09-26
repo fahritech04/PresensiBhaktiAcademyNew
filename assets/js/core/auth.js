@@ -78,14 +78,23 @@ const Auth = (() => {
     return session;
   }
 
+  function isLoginPath() {
+    return /\/login\/?$/.test(window.location.pathname);
+  }
+
   /** Panggil di paling atas setiap halaman terproteksi. */
   function guardPage() {
-    if (!isLoggedIn()) {
-      if (hasOAuthCallback()) {
-        return; // Callback OAuth sedang diproses di halaman ini
+    if (isLoggedIn()) return;
+    if (hasOAuthCallback()) {
+      // Callback OAuth bisa mendarat di halaman mana pun, termasuk root "/",
+      // kalau redirect_to tidak ada di daftar izin Supabase. Tokennya tetap di
+      // URL, jadi teruskan ke /login/ (penyhandlers) tanpa mengubah query/hash.
+      if (!isLoginPath()) {
+        window.location.replace("/login/" + (window.location.search || "") + (window.location.hash || ""));
       }
-      window.location.replace("/login/");
+      return;
     }
+    window.location.replace("/login/");
   }
 
   /** Panggil di halaman login: jika sudah login, langsung ke dashboard atau scan. */
