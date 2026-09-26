@@ -83,7 +83,7 @@ const UI = (() => {
         </nav>
         <div class="topbar-right">
           ${loggedIn ? `
-          <div class="user-chip">
+          <div class="user-chip${isPelatih ? " is-pelatih" : ""}">
             <div><b>${escapeHtml(session.nama || "Admin")}</b><span>${escapeHtml(session.role || "Pengurus")}</span></div>
           </div>` : ""}
           <button type="button" class="nav-toggle" id="navToggle" aria-label="Buka menu" aria-expanded="false" aria-controls="navDrawer"><span class="nav-toggle-box"><span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span><span class="nav-toggle-bar"></span></span></button>
@@ -99,6 +99,14 @@ const UI = (() => {
             <span>Menu</span>
             <button type="button" class="nav-drawer-close" id="navDrawerClose" aria-label="Tutup menu">${ICONS.x}</button>
           </div>
+          ${isPelatih ? `
+          <div class="drawer-user-card">
+            <div class="drawer-user-icon">${ICONS.pelatih}</div>
+            <div class="drawer-user-meta">
+              <b class="drawer-user-name">${escapeHtml(session.nama || "Pelatih")}</b>
+              <span class="drawer-user-role">${escapeHtml(session.role || "Pelatih")}</span>
+            </div>
+          </div>` : ""}
           ${visibleItems.map((item) => navLinkHtml(item, active)).join("")}
         </nav>
       </div>`;

@@ -683,6 +683,12 @@ textarea.input {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.user-chip.is-pelatih b {
+  max-width: none;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: nowrap;
+}
 .user-chip span {
   font-size: 10.5px;
   color: var(--ink-soft);
@@ -834,6 +840,59 @@ body.nav-open {
   font-size: 20px;
   letter-spacing: 0.02em;
   color: var(--paper);
+}
+.drawer-user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: 0 0 14px 0;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 0.22s ease, transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.nav-drawer.open .drawer-user-card {
+  opacity: 1;
+  transform: translateX(0);
+}
+.drawer-user-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(244, 159, 4, 0.16);
+  border: 1px solid rgba(244, 159, 4, 0.35);
+  color: var(--orange-active);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.drawer-user-icon svg {
+  width: 22px;
+  height: 22px;
+}
+.drawer-user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.drawer-user-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.35;
+  word-break: break-word;
+}
+.drawer-user-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .nav-drawer-close {
   display: inline-flex;
