@@ -5,17 +5,29 @@
 
   let allRows = [];
   let nominalDefault = 0;
+  let page = 1;
+  let pageSize = 25;
+  let filteredCount = 0;
   const now = new Date();
   let selectedBulan = now.getMonth() + 1;
   let selectedTahun = now.getFullYear();
 
   const tableBody = document.getElementById("tableBody");
   const emptyState = document.getElementById("emptyState");
+  const emptyTitle = document.getElementById("emptyTitle");
+  const emptyDesc = document.getElementById("emptyDesc");
   const searchInput = document.getElementById("searchInput");
   const filterBulan = document.getElementById("filterBulan");
   const filterTahun = document.getElementById("filterTahun");
   const filterKelompok = document.getElementById("filterKelompok");
   const filterStatus = document.getElementById("filterStatus");
+  const paginationBar = document.getElementById("paginationBar");
+  const rowInfo = document.getElementById("rowInfo");
+  const pageSizeSelect = document.getElementById("pageSizeSelect");
+  const btnFirst = document.getElementById("btnFirst");
+  const btnPrev = document.getElementById("btnPrev");
+  const btnNext = document.getElementById("btnNext");
+  const btnLast = document.getElementById("btnLast");
 
   const form = document.getElementById("iuranForm");
   const modalTitle = document.getElementById("modalTitle");
@@ -46,21 +58,53 @@
   function bindEvents() {
     filterBulan.addEventListener("change", () => {
       selectedBulan = Number(filterBulan.value);
-      loadData();
+      reload();
     });
     filterTahun.addEventListener("change", () => {
       selectedTahun = Number(filterTahun.value);
-      loadData();
+      reload();
     });
-    filterKelompok.addEventListener("change", loadData);
-    filterStatus.addEventListener("change", renderTable);
-    searchInput.addEventListener("input", renderTable);
+    filterKelompok.addEventListener("change", reload);
+    filterStatus.addEventListener("change", resetPage);
+    searchInput.addEventListener("input", resetPage);
+    pageSizeSelect.addEventListener("change", () => {
+      pageSize = Number(pageSizeSelect.value) || 25;
+      page = 1;
+      renderTable();
+    });
+    btnFirst.addEventListener("click", () => goToPage(1));
+    btnPrev.addEventListener("click", () => goToPage(page - 1));
+    btnNext.addEventListener("click", () => goToPage(page + 1));
+    btnLast.addEventListener("click", () => goToPage(totalPages()));
 
     document.getElementById("btnCloseModal").addEventListener("click", () => UI.closeModal("iuranModal"));
     document.getElementById("btnBatal").addEventListener("click", () => UI.closeModal("iuranModal"));
     form.addEventListener("submit", onSubmit);
 
     document.getElementById("btnCloseRiwayat").addEventListener("click", () => UI.closeModal("riwayatModal"));
+  }
+
+  function resetPage() {
+    page = 1;
+    renderTable();
+  }
+
+  function reload() {
+    page = 1;
+    loadData();
+  }
+
+  function totalPages() {
+    return Math.max(1, Math.ceil(filteredCount / pageSize));
+  }
+
+  function goToPage(next) {
+    const target = Math.min(Math.max(1, next), totalPages());
+    if (target === page) return;
+    page = target;
+    renderTable();
+    const wrap = document.querySelector(".table-wrap");
+    if (wrap) wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   async function loadKelompok() {
@@ -83,7 +127,11 @@
     } catch (err) {
       UI.toast(err.message, "error");
       tableBody.innerHTML = "";
+      allRows = [];
+      filteredCount = 0;
+      updateEmptyState();
       emptyState.classList.remove("hidden");
+      updatePager();
     }
   }
 
@@ -94,24 +142,62 @@
     document.getElementById("statTerkumpul").textContent = UI.formatRupiah(d.totalTerkumpul);
   }
 
+  function updatePager() {
+    const pages = totalPages();
+    if (!filteredCount) {
+      paginationBar.classList.add("hidden");
+      return;
+    }
+    paginationBar.classList.remove("hidden");
+    const from = (page - 1) * pageSize + 1;
+    const to = Math.min(page * pageSize, filteredCount);
+    rowInfo.textContent = `${from}-${to} dari ${filteredCount} siswa · hal. ${page}/${pages}`;
+    btnFirst.disabled = page === 1;
+    btnPrev.disabled = page === 1;
+    btnNext.disabled = page >= pages;
+    btnLast.disabled = page >= pages;
+  }
+
+  function updateEmptyState() {
+    if (!allRows.length) {
+      emptyTitle.textContent = "Belum ada data siswa aktif";
+      emptyDesc.textContent = "Tambahkan siswa dulu di menu Siswa untuk mulai mencatat iuran.";
+      return;
+    }
+    emptyTitle.textContent = "Tidak ada siswa yang cocok";
+    emptyDesc.textContent = "Coba ubah kata kunci atau filter status.";
+  }
+
   function renderTable() {
     const q = searchInput.value.trim().toLowerCase();
     const status = filterStatus.value;
 
-    const filtered = allRows.filter((r) => {
-      const matchQ = !q || r.nama.toLowerCase().includes(q);
-      const matchStatus = !status || r.status === status;
-      return matchQ && matchStatus;
-    });
+    // `rpc_get_iuran_bulan` tidak mengirim barcode, jadi urutan dibuat stabil
+    // berdasarkan nama agar isi halaman tidak berubah-ubah antar muat.
+    const filtered = allRows
+      .filter((r) => {
+        const matchQ = !q || r.nama.toLowerCase().includes(q);
+        const matchStatus = !status || r.status === status;
+        return matchQ && matchStatus;
+      })
+      .sort((a, b) => a.nama.localeCompare(b.nama, "id"));
 
-    if (!filtered.length) {
+    filteredCount = filtered.length;
+    if (page > totalPages()) page = totalPages();
+
+    const start = (page - 1) * pageSize;
+    const rows = filtered.slice(start, start + pageSize);
+
+    if (!rows.length) {
       tableBody.innerHTML = "";
+      updateEmptyState();
       emptyState.classList.remove("hidden");
+      updatePager();
       return;
     }
     emptyState.classList.add("hidden");
 
-    tableBody.innerHTML = filtered
+    tableBody.innerHTML = rows
       .map((r) => {
         const isLunas = r.status === "Lunas";
         return `
@@ -141,6 +227,8 @@
     tableBody.querySelectorAll("[data-edit]").forEach((btn) => btn.addEventListener("click", () => openForm(findRow(btn.dataset.edit))));
     tableBody.querySelectorAll("[data-batal]").forEach((btn) => btn.addEventListener("click", () => onBatalkan(findRow(btn.dataset.batal))));
     tableBody.querySelectorAll("[data-riwayat]").forEach((btn) => btn.addEventListener("click", () => openRiwayat(findRow(btn.dataset.riwayat))));
+
+    updatePager();
   }
 
   function findRow(siswaId) {

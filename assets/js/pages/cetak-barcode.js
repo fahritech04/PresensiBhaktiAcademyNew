@@ -88,19 +88,30 @@
     await loadData();
   }
 
+  // Urutan tampil & cetak: naik dari BSA-0001 / PLT-0001 (angka barcode dibuat
+  // sequence saat pendaftaran, jadi terbaru selalu di akhir).
+  function compareBarcode(a, b) {
+    const na = Number.parseInt(String(a.barcode || "").replace(/\D+/g, ""), 10);
+    const nb = Number.parseInt(String(b.barcode || "").replace(/\D+/g, ""), 10);
+    if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+    return String(a.barcode || "").localeCompare(String(b.barcode || ""), "id");
+  }
+
   function getVisibleRows() {
     const q = searchInput.value.trim().toLowerCase();
     if (mode === "pelatih") {
-      return allPelatih.filter((p) => !q || p.nama.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q));
+      return allPelatih.filter((p) => !q || p.nama.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q)).sort(compareBarcode);
     }
     const kel = filterKelompok.value;
     const jk = filterJenisKelamin ? filterJenisKelamin.value : "";
-    return allSiswa.filter((s) => {
-      const matchQ = !q || s.nama.toLowerCase().includes(q) || s.barcode.toLowerCase().includes(q);
-      const matchKel = !kel || s.kelompok === kel;
-      const matchJk = !jk || s.jenisKelamin === jk;
-      return matchQ && matchKel && matchJk;
-    });
+    return allSiswa
+      .filter((s) => {
+        const matchQ = !q || s.nama.toLowerCase().includes(q) || s.barcode.toLowerCase().includes(q);
+        const matchKel = !kel || s.kelompok === kel;
+        const matchJk = !jk || s.jenisKelamin === jk;
+        return matchQ && matchKel && matchJk;
+      })
+      .sort(compareBarcode);
   }
 
   function renderTable() {
@@ -159,7 +170,8 @@
   }
 
   async function printSelected() {
-    const list = (mode === "siswa" ? allSiswa : allPelatih).filter((s) => selected.has(s.barcode));
+    // Cetak juga mengikuti urutan barcode, mengikuti urutan tabel yang tampil.
+    const list = (mode === "siswa" ? allSiswa : allPelatih).filter((s) => selected.has(s.barcode)).sort(compareBarcode);
     if (!list.length) return;
 
     if (typeof QRCode === "undefined") {

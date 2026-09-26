@@ -3,10 +3,10 @@
 
   let currentRows = [];
   let total = 0;
-  let page = 0;
+  let page = 0; // 0-based
+  let pageSize = 500;
   let mode = "detail";
   let rekapRows = [];
-  const PAGE_SIZE = 500;
 
   const dari = document.getElementById("filterDari");
   const sampai = document.getElementById("filterSampai");
@@ -22,8 +22,13 @@
   const btnRekap = document.getElementById("btnRekap");
   const btnExport = document.getElementById("btnExport");
   const rowInfo = document.getElementById("rowInfo");
+  const sizeGroup = document.getElementById("sizeGroup");
+  const navGroup = document.getElementById("navGroup");
+  const pageSizeSelect = document.getElementById("pageSizeSelect");
+  const btnFirst = document.getElementById("btnFirst");
   const btnPrev = document.getElementById("btnPrev");
   const btnNext = document.getElementById("btnNext");
+  const btnLast = document.getElementById("btnLast");
 
   init();
 
@@ -39,12 +44,32 @@
       page = 0;
       loadData();
     });
-    if (btnPrev) btnPrev.addEventListener("click", () => { if (page > 0) { page--; loadData(); } });
-    if (btnNext) btnNext.addEventListener("click", () => { page++; loadData(); });
+    if (btnPrev) btnPrev.addEventListener("click", () => goToPage(page - 1));
+    if (btnNext) btnNext.addEventListener("click", () => goToPage(page + 1));
+    if (btnFirst) btnFirst.addEventListener("click", () => goToPage(0));
+    if (btnLast) btnLast.addEventListener("click", () => goToPage(totalPages() - 1));
+    if (pageSizeSelect) {
+      pageSizeSelect.addEventListener("change", () => {
+        pageSize = Number(pageSizeSelect.value) || 500;
+        page = 0;
+        loadData();
+      });
+    }
     btnExport.addEventListener("click", exportHTML);
     btnDetail.addEventListener("click", () => setMode("detail"));
     btnRekap.addEventListener("click", () => setMode("rekap"));
     await Promise.all([fillKelompok(), loadData()]);
+  }
+
+  function totalPages() {
+    return Math.max(1, Math.ceil(total / pageSize));
+  }
+
+  function goToPage(next) {
+    const target = Math.min(Math.max(0, next), totalPages() - 1);
+    if (target === page) return;
+    page = target;
+    loadData();
   }
 
 
@@ -70,11 +95,16 @@
         sampai: sampai.value,
         kelompok: kelompok.value,
         status: status.value,
-        limit: PAGE_SIZE,
-        offset: page * PAGE_SIZE,
+        limit: pageSize,
+        offset: page * pageSize,
       });
       currentRows = data.rows || [];
       total = Number(data.total ?? currentRows.length);
+      // Halaman bisa jadi tidak berlaku lagi setelah filter/total berubah.
+      if (page > totalPages() - 1) {
+        page = totalPages() - 1;
+        return loadData();
+      }
       renderTable();
       updatePager();
     } catch (err) {
@@ -86,10 +116,20 @@
 
   function updatePager() {
     if (!btnPrev || !btnNext) return;
-    btnPrev.disabled = page === 0;
-    btnNext.disabled = page * PAGE_SIZE + currentRows.length >= total;
-    if (!total) return;
-    document.getElementById("rowInfo").textContent = `${page * PAGE_SIZE + currentRows.length} dari ${total} data`;
+    const pages = totalPages();
+    const isFirst = page === 0;
+    const isLast = (page + 1) * pageSize >= total;
+    btnFirst.disabled = isFirst;
+    btnPrev.disabled = isFirst;
+    btnNext.disabled = isLast;
+    btnLast.disabled = isLast;
+    if (!total) {
+      rowInfo.textContent = "0 data";
+      return;
+    }
+    const from = page * pageSize + 1;
+    const to = Math.min((page + 1) * pageSize, total);
+    rowInfo.textContent = `${from}-${to} dari ${total} data · hal. ${page + 1}/${pages}`;
   }
 
   function renderTable() {
@@ -125,8 +165,8 @@
     btnRekap.classList.toggle("btn-ghost", !isRekap);
     detailWrap.style.display = isRekap ? "none" : "";
     rekapWrap.style.display = isRekap ? "" : "none";
-    btnPrev.style.display = isRekap ? "none" : "";
-    btnNext.style.display = isRekap ? "none" : "";
+    if (sizeGroup) sizeGroup.style.display = isRekap ? "none" : "";
+    if (navGroup) navGroup.style.display = isRekap ? "none" : "";
     rowInfo.style.display = isRekap ? "none" : "";
     btnExport.innerHTML = isRekap ? "&darr; Unduh Rekap" : "&darr; Unduh Laporan";
     page = 0;

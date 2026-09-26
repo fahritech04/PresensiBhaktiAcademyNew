@@ -6,6 +6,56 @@
     <title>Data Pelatih &middot; Bhakti Sebatung Academy</title>
     <script src="/assets/js/core/head.js?v=20260923-3"></script>
     <link rel="stylesheet" href="/assets/css/style.css?v=20260923-9" />
+    <style>
+      .pagination {
+        flex-wrap: wrap;
+        gap: 10px 12px;
+        row-gap: 10px;
+      }
+      .pagination-size {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .pagination-size select {
+        min-height: 32px;
+        padding: 4px 8px;
+        font-size: 12px;
+        width: auto;
+      }
+      .pagination #rowInfo {
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .pagination-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .pagination-nav .btn {
+        min-height: 32px;
+        padding: 6px 10px;
+      }
+      @media screen and (max-width: 640px) {
+        .pagination {
+          justify-content: center;
+        }
+        .pagination #rowInfo {
+          flex: 1 1 100%;
+          order: -1;
+        }
+        .pagination-nav {
+          flex: 1 1 100%;
+        }
+        .pagination-nav .btn {
+          flex: 1;
+          min-width: 0;
+          padding: 8px 4px;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="shell">
@@ -47,8 +97,27 @@
               </table>
             </div>
             <div id="emptyState" class="empty-state hidden">
-              <h3>Belum ada data pelatih</h3>
-              <p>Klik "Tambah Pelatih" untuk mendaftarkan pelatih baru.</p>
+              <h3 id="emptyTitle">Belum ada data pelatih</h3>
+              <p id="emptyDesc">Klik "Tambah Pelatih" untuk mendaftarkan pelatih baru.</p>
+            </div>
+
+            <div class="pagination no-print" id="paginationBar">
+              <div class="pagination-size">
+                <label for="pageSizeSelect">Tampilkan</label>
+                <select class="input" id="pageSizeSelect" aria-label="Jumlah data pelatih per halaman">
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+                <span>data per halaman</span>
+              </div>
+              <span id="rowInfo">0 data</span>
+              <div class="pagination-nav">
+                <button type="button" class="btn btn-ghost btn-sm" id="btnFirst" aria-label="Ke halaman pertama">&laquo;&nbsp;Awal</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btnPrev">&larr;&nbsp;Sebelumnya</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btnNext">Berikutnya&nbsp;&rarr;</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btnLast" aria-label="Ke halaman terakhir">Akhir&nbsp;&raquo;</button>
+              </div>
             </div>
           </div>
         </div>
@@ -101,6 +170,6 @@
     <script src="/assets/js/core/api.js?v=20260925-1" defer></script>
     <script src="/assets/js/core/auth.js?v=20260926-2" defer></script>
     <script src="/assets/js/core/ui.js?v=20260926-1" defer></script>
-    <script src="/assets/js/pages/pelatih.js?v=20260925-1" defer></script>
+    <script src="/assets/js/pages/pelatih.js?v=20260926-2" defer></script>
   </body>
 </html>
