@@ -37,7 +37,7 @@
         UI.fillSelect(filterKelompok, data.kelompok || [], "Semua Kelompok");
       } else {
         const data = await Api.cached("getPelatihList");
-        allPelatih = (data.pelatih || []).filter((p) => p.status === "Aktif");
+        allPelatih = (data.pelatih || []).filter((p) => p.status === "Aktif" && p.verifikasi === true);
       }
       renderTable();
     } catch (err) {
