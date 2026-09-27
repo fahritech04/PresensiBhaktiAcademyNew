@@ -7,7 +7,8 @@
 --   2. rpc_get_pelatih_list()  — sertakan email & verifikasi (untuk halaman admin)
 --   3. rpc_set_pelatih_verifikasi() — admin tandai/batalkan verifikasi
 --   4. rpc_get_pelatih_self() — baca data pelatih login (untuk scan gate + QR sendiri)
---   5. REVOKE akses anon/authenticated (ikut pola schema.sql)
+--   5. rpc_scan_presensi_pelatih() — gate verifikasi (blokir kalau belum diverifikasi)
+--   6. REVOKE akses anon/authenticated (ikut pola schema.sql)
 --
 -- Pelatih Google belum terverifikasi TIDAK boleh scan presensi siswa — gate
 -- dilakukan di Edge Function (scanPresensi) lewat rpc_get_pelatih_self().verifikasi.
@@ -99,8 +100,52 @@ end;
 $$;
 
 -- =============================================================================
--- 5) HAK AKSES: revoke anon/authenticated, hanya service_role (ikut schema.sql).
+-- 6) SCAN PRESENSI PELATIH — gate verifikasi (admin & pelatih).
+--    Redefine fungsi dari pelatih.sql + cek verifikasi = true.
 -- =============================================================================
+create or replace function rpc_scan_presensi_pelatih(p_barcode text)
+returns jsonb language plpgsql as $$
+declare
+  v_lock constant bigint := hashtext('bsa_mutating_lock');
+  v_tz text := app_config()->>'timezone';
+  v_now timestamptz := now();
+  v_local timestamp := v_now at time zone v_tz;
+  v_tanggal date := v_local::date;
+  v_pelatih pelatih%rowtype;
+  v_existing presensi_pelatih%rowtype;
+  v_id text;
+  v_barcode text := trim(coalesce(p_barcode, ''));
+begin
+  perform pg_advisory_xact_lock(v_lock);
+
+  if v_barcode = '' then
+    raise exception 'Kode QR kosong.';
+  end if;
+
+  select * into v_pelatih from pelatih where lower(barcode) = lower(v_barcode) limit 1;
+  if not found then
+    raise exception 'Kode QR pelatih tidak terdaftar.';
+  end if;
+  if v_pelatih.status <> 'Aktif' then
+    raise exception '% berstatus nonaktif, tidak bisa Presensi.', v_pelatih.nama;
+  end if;
+  if v_pelatih.verifikasi <> true then
+    raise exception '% belum diverifikasi oleh admin.', v_pelatih.nama;
+  end if;
+
+  select * into v_existing from presensi_pelatih where pelatih_barcode = v_pelatih.barcode and tanggal = v_tanggal;
+  if found then
+    raise exception '% sudah tercatat hadir hari ini pukul %.',
+      v_pelatih.nama, to_char(v_existing.waktu at time zone v_tz, 'HH24:MI');
+  end if;
+
+  v_id := next_sequence_id('ABS-PLT-');
+  insert into presensi_pelatih (id, pelatih_barcode, nama, waktu, tanggal, status, keterangan)
+  values (v_id, v_pelatih.barcode, v_pelatih.nama, v_now, v_tanggal, 'Hadir', '');
+
+  return jsonb_build_object('id', v_id, 'nama', v_pelatih.nama, 'waktu', v_now, 'status', 'Hadir');
+end;
+$$;
 do $$
 declare
   f record;
