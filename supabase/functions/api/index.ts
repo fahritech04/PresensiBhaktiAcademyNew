@@ -84,6 +84,7 @@ const PELATIH_ACTIONS = new Set([
   "getKelompokList",
   "getPelatihList",
   "getDashboardStats",
+  "getPelatihSelf",
 ]);
 
 // Burst limiter memory (per-instance, best-effort — layer final di database).
@@ -182,7 +183,16 @@ const ACTIONS: Record<string, Handler> = {
 
   getKelompokList: () => call("rpc_get_kelompok_list", {}),
 
-  scanPresensi: (p) => call("rpc_scan_presensi", { p_barcode: p.barcode, p_tanggal: orNull(p.tanggal) }),
+  // Pelatih hanya boleh scan siswa kalau akunnya sudah diverifikasi admin.
+  scanPresensi: async (p, session) => {
+    if (session && session.role === "Pelatih") {
+      const pelatih = await call("rpc_get_pelatih_self", { p_email: session.username || "" });
+      if (!pelatih.verifikasi) {
+        throw new Error("Akun pelatih belum diverifikasi. Hubungi pengurus untuk verifikasi.");
+      }
+    }
+    return call("rpc_scan_presensi", { p_barcode: p.barcode, p_tanggal: orNull(p.tanggal) });
+  },
 
   getPresensiList: (p) =>
     call("rpc_get_presensi_list", {
@@ -232,6 +242,10 @@ const ACTIONS: Record<string, Handler> = {
   getRiwayatIuranSiswa: (p) => call("rpc_get_riwayat_iuran_siswa", { p_siswa_id: p.siswaId }),
 
   getPelatihList: () => call("rpc_get_pelatih_list", {}),
+
+  getPelatihSelf: (_p, session) => call("rpc_get_pelatih_self", { p_email: (session && session.username) || "" }),
+
+  setPelatihVerifikasi: (p) => call("rpc_set_pelatih_verifikasi", { p_barcode: p.barcode, p_verifikasi: p.verifikasi === true }),
 
   addPelatih: (p) => call("rpc_add_pelatih", { p_nama: p.nama, p_status: p.status }),
 

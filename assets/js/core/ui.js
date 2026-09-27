@@ -39,6 +39,7 @@ const UI = (() => {
     { key: "cetak", href: "/cetak-barcode/", label: "Cetak QR", icon: ICONS.cetak, adminOnly: true },
     { key: "pelatih", href: "/pelatih/", label: "Pelatih", icon: ICONS.pelatih, adminOnly: true },
     { key: "presensi-pelatih", href: "/presensi-pelatih/", label: "Riwayat Pelatih", icon: ICONS.history, adminOnly: true },
+    { key: "qr-pelatih", href: "/qr-pelatih/", label: "Kode QR Saya", icon: ICONS.cetak, pelatihOnly: true },
   ];
 
   /* ---------------------------- PAGE BOOT ---------------------------- */
@@ -63,8 +64,8 @@ const UI = (() => {
     const visibleItems = NAV_ITEMS.filter((item) => {
       if (item.public) return true; // dashboard & siswa selalu tampil
       if (!loggedIn) return false;
-      if (isPelatih) return !item.adminOnly; // pelatih: sembunyikan menu admin
-      return true; // admin: semua
+      if (isPelatih) return !!item.pelatihOnly || !item.adminOnly; // pelatih: sembunyikan menu admin, tampilkan menu pelatih
+      return !item.pelatihOnly; // admin: sembunyikan menu khusus pelatih
     });
 
     const topbarRoot = document.getElementById("topbar-root");

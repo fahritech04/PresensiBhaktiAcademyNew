@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Kode QR Saya &middot; Bhakti Sebatung Academy</title>
+    <script src="/assets/js/core/head.js?v=20260923-3"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20260923-9" />
+    <style>
+      .qr-self-wrap {
+        display: grid;
+        justify-items: center;
+        gap: 16px;
+        padding: 8px 0;
+      }
+      .qr-self-meta {
+        display: grid;
+        justify-items: center;
+        gap: 6px;
+        text-align: center;
+      }
+      .qr-self-meta .muted {
+        margin: 0;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div id="topbar-root"></div>
+
+      <main class="view" id="mainContent" tabindex="-1">
+        <div class="view-head" id="viewHead"></div>
+
+        <div class="card data-card">
+          <div class="card-head">
+            <div>
+              <h2>Kartu Presensi Pelatih</h2>
+              <p class="desc">Tunjukkan kode QR ini saat scan presensi siswa.</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="ticket-grid" id="qrCard"></div>
+          </div>
+        </div>
+      </main>
+
+      <div id="nav-root"></div>
+    </div>
+
+    <script src="/assets/js/vendor/qrcode.min.js" defer></script>
+    <script src="/assets/js/core/config.js?v=20260923-2" defer></script>
+    <script src="/assets/js/core/api.js?v=20260927-1" defer></script>
+    <script src="/assets/js/core/auth.js?v=20260926-5" defer></script>
+    <script src="/assets/js/core/ui.js?v=20260927-1" defer></script>
+    <script src="/assets/js/pages/qr-pelatih.js?v=20260927-3" defer></script>
+  </body>
+</html>

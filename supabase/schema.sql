@@ -365,7 +365,7 @@ $$;
 -- Akun admin default (username: admin / password: admin123).
 -- SEGERA GANTI setelah login pertama, persis seperti pesan setupSpreadsheet() dulu.
 insert into admin (username, password_hash, nama, role, status)
-values ('admin', hash_password('Bsaa135*'), 'Admin Academy', 'Pengurus', 'Aktif')
+values ('admin', hash_password('Bsacademy135*'), 'Admin Academy', 'Pengurus', 'Aktif')
 on conflict (username) do nothing;
 
 -- =============================================================================

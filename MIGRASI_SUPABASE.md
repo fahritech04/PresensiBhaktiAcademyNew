@@ -17,7 +17,7 @@ sama sekali**.
 | Kontrak API dari browser | `POST { action, token, payload }` → `{ ok, data }` | **Sama persis**, cuma alamat URL & header yang beda |
 | Frontend (`pages/*.js`, `ui.js`, `auth.js`) | — | **Tidak diubah** |
 | Yang diubah di frontend | — | `assets/js/core/config.js` & `assets/js/core/api.js` saja |
-| Login default | `admin` / `Bsaa135*` (seed `schema.sql`) | Tetap sama, segera ganti setelah login pertama |
+| Login default | `admin` / `Bsacademy135*` (seed `schema.sql`) | Tetap sama, segera ganti setelah login pertama |
 
 File `assets/code.gs` lama (Google Apps Script) sudah **dihapus** dari repo setelah
 migrasi ini rampung — backend lama sudah tidak dipakai. Isi aslinya bisa diambil
@@ -40,7 +40,7 @@ kembali kapan saja dari riwayat git bila diperlukan.
 3. Kalau sukses, cek di **Table Editor**: harus ada tabel `siswa`,
    `presensi`, `jadwal`, `iuran`, `admin`, `sessions`, `login_attempts` —
    dan tabel `admin` sudah otomatis terisi 1 baris akun default
-   (`admin` / `Bsaa135*`).
+   (`admin` / `Bsacademy135*`).
 
 > Skema ini aman dijalankan ulang (`create or replace function`, `create
 > table if not exists`) kalau suatu saat kamu update logic-nya.
@@ -111,8 +111,9 @@ telat kode QR dan dicatat presensi di **tanggal latihan yang benar**
 (latihan Senin, scan Selasa/Rabu dengan tanggal Senin → hadir Senin).
 
 **Urutan wajib deploy SQL**: `schema.sql` → `hardening.sql` →
-`backdate_presensi.sql`. Re-run `schema.sql` (mis. saat update logic)
-resets fungsi `rpc_*` ke versi lama → re-run `hardening.sql` + `backdate_presensi.sql` sesegera sesudah.
+`backdate_presensi.sql` → `pelatih.sql` → `pelatih_google.sql` →
+`pelatih_verifikasi.sql`. Re-run `schema.sql` (mis. saat update logic)
+resets fungsi `rpc_*` ke versi lama → re-run semua delta di atas sesegera sesudah.
 
 ## 4) Hubungkan frontend ke Supabase
 
@@ -178,7 +179,7 @@ Kalau kamu sudah punya data siswa/jadwal/iuran di Spreadsheet lama:
 
 ## 6) Uji coba
 
-1. Buka website kamu (atau jalankan lokal), login dengan `admin` / `Bsaa135*`.
+1. Buka website kamu (atau jalankan lokal), login dengan `admin` / `Bsacademy135*`.
 2. Coba tambah siswa baru, scan barcode-nya di halaman **Scan**, cek
    **Dashboard** & **Riwayat Presensi**, tandai **Iuran** Lunas untuk 1
    siswa.

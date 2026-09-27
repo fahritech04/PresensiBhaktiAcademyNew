@@ -99,7 +99,7 @@ Ikuti **[`MIGRASI_SUPABASE.md`](./MIGRASI_SUPABASE.md)** untuk setup lengkap dar
 7. Deploy ke GitHub Pages.
 
 - **Username**: `admin`
-- **Password default** (seed di `schema.sql`): `Bsaa135*` → ⚠️ **segera ganti** (lihat `MIGRASI_SUPABASE.md` bagian "Uji coba").
+- **Password default** (seed di `schema.sql`): `Bsacademy135*` → ⚠️ **segera ganti** (lihat `MIGRASI_SUPABASE.md` bagian "Uji coba").
 
 ---
 

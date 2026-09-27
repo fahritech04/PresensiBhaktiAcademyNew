@@ -125,7 +125,7 @@
 
     const filtered = allPelatih
       .filter((p) => {
-        const matchQ = !q || p.nama.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q);
+        const matchQ = !q || p.nama.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q) || (p.email || "").toLowerCase().includes(q);
         const matchStatus = !status || p.status === status;
         return matchQ && matchStatus;
       })
@@ -153,9 +153,13 @@
         <td class="mono">${UI.escapeHtml(p.barcode)}</td>
         <td>
           <div class="cell-name">${UI.escapeHtml(p.nama)}</div>
-          <div class="cell-sub">Pelatih</div>
+          <div class="cell-sub">${p.email ? UI.escapeHtml(p.email) : "Pelatih"}</div>
         </td>
         <td><span class="tag ${p.status === "Aktif" ? "tag-aktif" : "tag-nonaktif"}">${p.status}</span></td>
+        <td>
+          <span class="tag ${p.verifikasi ? "tag-aktif" : "tag-nonaktif"}">${p.verifikasi ? "Terverifikasi" : "Belum"}</span>
+          <button type="button" class="btn btn-sm ${p.verifikasi ? "btn-ghost" : "btn-primary"}" style="margin-left: 8px" data-verify="${UI.escapeHtml(p.barcode)}" data-verified="${p.verifikasi ? "1" : "0"}">${p.verifikasi ? "Batalkan" : "Verifikasi"}</button>
+        </td>
         <td>
           <div class="row-actions">
             <button class="btn btn-ghost btn-icon" title="Edit" data-edit="${UI.escapeHtml(p.barcode)}">${UI.ICONS.edit}</button>
@@ -168,6 +172,7 @@
 
     tableBody.querySelectorAll("[data-edit]").forEach((btn) => btn.addEventListener("click", () => openForm(allPelatih.find((p) => p.barcode === btn.dataset.edit))));
     tableBody.querySelectorAll("[data-delete]").forEach((btn) => btn.addEventListener("click", () => onDelete(btn.dataset.delete)));
+    tableBody.querySelectorAll("[data-verify]").forEach((btn) => btn.addEventListener("click", () => onVerify(btn.dataset.verify, btn.dataset.verified === "0")));
 
     updatePager();
   }
@@ -210,6 +215,17 @@
       UI.toast(err.message, "error");
     } finally {
       UI.setButtonLoading(btn, false, "Simpan Pelatih");
+    }
+  }
+
+  async function onVerify(barcode, verifikasi) {
+    const pelatih = allPelatih.find((p) => p.barcode === barcode);
+    try {
+      await Api.call("setPelatihVerifikasi", { barcode, verifikasi });
+      UI.toast(`${pelatih ? pelatih.nama : "Pelatih"} ${verifikasi ? "diverifikasi" : "dibatalkan verifikasinya"}.`, "success");
+      await loadData();
+    } catch (err) {
+      UI.toast(err.message, "error");
     }
   }
 

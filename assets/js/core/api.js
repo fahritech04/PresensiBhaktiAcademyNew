@@ -4,7 +4,7 @@ const Api = (() => {
   const MUTATING_ACTIONS = new Set([
     "addSiswa", "updateSiswa", "deleteSiswa",
     "scanPresensi", "tandaiIuran", "batalkanIuran", "updateIuran",
-    "addPelatih", "updatePelatih", "deletePelatih", "scanPresensiPelatih",
+    "addPelatih", "updatePelatih", "deletePelatih", "scanPresensiPelatih", "setPelatihVerifikasi",
   ]);
 
   function getToken() {
