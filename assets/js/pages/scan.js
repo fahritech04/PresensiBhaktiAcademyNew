@@ -13,7 +13,7 @@
     }
   }
 
-  UI.renderPage({ active: "scan", title: "Scan Presensi", desc: "Pindai kode QR siswa atau pelatih untuk mencatat kehadiran" });
+  UI.renderPage({ active: "scan", title: "Scan Presensi", desc: "Pindai kode QR untuk mencatat kehadiran" });
 
   const manualInput = document.getElementById("manualInput");
   const btnManualSubmit = document.getElementById("btnManualSubmit");
