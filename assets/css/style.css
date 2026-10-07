@@ -1260,6 +1260,10 @@ table.tbl td {
   border-bottom: 1px solid var(--line-soft);
   vertical-align: middle;
 }
+.status-dot,
+.eval-status {
+  white-space: nowrap;
+}
 table.tbl tbody tr:hover {
   background: #f5f9fb;
 }
@@ -1905,6 +1909,9 @@ table.tbl td.mono {
   }
   .table-hint {
     display: block;
+  }
+  table.tbl {
+    min-width: 640px;
   }
   table.tbl td,
   table.tbl th {
