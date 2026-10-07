@@ -109,7 +109,7 @@
     });
     btnManualSubmit.addEventListener("click", submitManual);
     document.addEventListener("click", (e) => {
-      // Jaga supaya kolom tetap fokus untuk alat scanner, kecuali user sedang isi form lain.
+      // Kolom tetap fokus utk alat scanner, kecuali user isi form lain.
       if (!panelManual.classList.contains("hidden") && !e.target.closest(".modal")) {
         setTimeout(focusManualInput, 50);
       }
@@ -136,7 +136,7 @@
         cameraViewport.style.setProperty("--camera-ratio", video.videoWidth / video.videoHeight);
       }
     }, true);
-    // The library calculates its crop only on start, not when the video resizes.
+    // Library hitung crop hanya saat start, bukan saat video resize.
     const cameraObserver = new ResizeObserver(() => {
       clearTimeout(cameraResizeTimer);
       if (!cameraRequested || !cameraRunning || !html5QrCode?.isScanning || panelCamera.classList.contains("hidden")) return;
@@ -160,7 +160,7 @@
     camDot.style.background = "#9CA3AF";
     camStatusText.textContent = "Menyalakan kamera…";
 
-    // Serialize camera operations so resizing cannot leave an old stream active.
+    // Serialize operasi kamera: resize tidak boleh tinggalkan stream lama.
     cameraJob = cameraJob.then(async () => {
       if (version !== cameraVersion) return;
       await releaseCamera();
@@ -181,10 +181,10 @@
           cameraWidth = viewWidth;
           cameraHeight = viewHeight;
           cameraViewportHeight = cameraViewport.clientHeight;
-          // Keep the real decoding area square with a small margin on compact cameras.
+          // Jaga area decoding tetap persegi + margin kecil di kamera compact.
           let availableSize = Math.min(viewWidth, viewHeight);
           if (window.matchMedia("(max-width: 767px)").matches) {
-            // Preserve the previous QR box while the full-width video is center-cropped.
+            // Pertahankan QR box saat video full-width di-crop tengah.
             availableSize = Math.min(availableSize, cameraViewportHeight, cameraViewportHeight * viewWidth / viewHeight);
           }
           const size = Math.min(280, Math.floor(availableSize - 24));
@@ -232,7 +232,7 @@
         if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) await html5QrCode.stop();
         html5QrCode.clear();
       } finally {
-        // Also release a stream cancelled before the library's first video frame.
+        // Lepas juga stream yang dibatalkan sebelum frame pertama muncul.
         if (video && video.srcObject) {
           video.srcObject.getTracks().forEach((track) => {
             if (track.readyState === "live") track.stop();

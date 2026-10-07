@@ -1,18 +1,9 @@
 -- =============================================================================
--- FEATURE: BACKDATE PRESENSI — Bhakti Sebatung Academy
--- File DELTA: jalan di SQL Editor. Aman dijalankan ulang.
---
--- Dapat: scan telat / latihan hari lama.
---   Skenario: latihan hari Senin, siswa salah/terlambat scan, admin scan
---   hari Selasa/Rabu dengan tanggal latihan -> presensi dicatat di tanggal
---   yang benar (Senin), status Hadir/Telat sesuai jadwal SENIN (bukan hari
---   scan). Duplikat tetap diblock lewat UNIQUE(siswa_id, tanggal).
---
--- URUTAN WAJIB deploy: schema.sql -> hardening.sql -> backdate_presensi.sql
--- (re-run schema.sql mengreset fungsi rpc_ -> re-run hardening + backdate).
---
--- TIDAK menambahkan kolom baru ke tabel bisnis (siswa/presensi/jadwal/iuran).
--- Logic default (tanggal = hari ini saat scan) tetap 100% sama.
+-- FEATURE: BACKDATE PRESENSI — scan telat / latihan hari lama. Idempotent.
+-- Contoh: latihan Senin, admin scan Selasa dgn tanggal latihan → presensi
+-- dicatat di tanggal Senin, status sesuai jadwal SENIN; duplikat tetap diblok.
+-- URUTAN WAJIB: schema.sql → hardening.sql → backdate_presensi.sql.
+-- Tidak menambah kolom ke tabel bisnis; default (tanggal = hari ini) tetap sama.
 -- =============================================================================
 
 -- Konfigurasi: berapa hari diere backdate diizinkan (default 7).
@@ -108,11 +99,9 @@ begin
       and lower(trim(hari)) = lower(trim(v_hari))
     limit 1;
 
-  -- Jadwal.jam_mulai format "HH:MM"; jika tidak valid -> selalu "Hadir"
-  -- (sama seperti determineStatus_ yang lama).
-  -- Catatan: batas Telat hanya dicek untuk scan HARI INI. Backdate (tanggal
-  -- lama) sengaja langsung 'Hadir' — scanner tidak bisa tahu siswa telat
-  -- atau tidak pada hari lama; keterangan 'Backdate' disimpan untuk audit.
+-- Jadwal.jam_mulai "HH:MM"; tidak valid → selalu "Hadir" (sama dgn versi lama).
+-- Batas Telat hanya dicek utk scan HARI INI. Backdate sengaja langsung 'Hadir'
+-- (scanner tak tahu telat/tidak di hari lama); keterangan 'Backdate' utk audit.
   if v_tanggal = v_today and found and v_jadwal.jam_mulai ~ '^\d{1,2}:\d{1,2}$' then
     v_jam := split_part(v_jadwal.jam_mulai, ':', 1)::int;
     if v_jam is not null then

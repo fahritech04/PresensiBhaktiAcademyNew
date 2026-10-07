@@ -1,19 +1,10 @@
 -- =============================================================================
--- FEATURE: LOGIN PELATIH VIA GOOGLE (Supabase Auth) — Bhakti Sebatung Academy
--- File DELTA: jalan di SQL Editor. Aman dijalankan ulang (idempotent).
---
--- Model hybrid: auth admin (custom username+password) TETAP, pelatih lewat
--- Supabase Auth Google. Semua perubahan ADITIF — tidak ada DROP/TRUNCATE/DELETE
--- di tabel siswa/presensi/iuran/jadwal/admin/sessions.
---
--- Isi:
---   1. app_config() — merge SELURUH key terkini + ip_max_login_attempts = 30
---   2. pelatih + kolom auth_uid & email (partial unique index)
---   3. rpc_login_google() — find-or-create pelatih + buat session role Pelatih
---   4. REVOKE akses anon/authenticated (ikut pola schema.sql)
---
--- URUTAN WAJIB deploy: schema.sql -> hardening.sql -> backdate_presensi.sql ->
--- pelatih.sql -> pelatih_google.sql.
+-- FEATURE: LOGIN PELATIH VIA GOOGLE (Supabase Auth) — delta, idempotent.
+-- Hybrid: admin tetap username+password, pelatih lewat Google. ADITIF (tanpa
+-- DROP/DELETE data lama).
+-- Isi: config ip_max_login_attempts=30 · kolom auth_uid & email di pelatih ·
+-- rpc_login_google() (find-or-create pelatih + session role Pelatih) · revoke.
+-- URUTAN: ... → pelatih.sql → pelatih_google.sql.
 -- =============================================================================
 
 -- =============================================================================

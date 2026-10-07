@@ -18,8 +18,6 @@
 
   let allSiswa = [];
   let kelompokOptions = [];
-  let page = 1;
-  let pageSize = 25;
   let filteredCount = 0;
 
   const tableBody = document.getElementById("tableBody");
@@ -30,13 +28,9 @@
   const filterKelompok = document.getElementById("filterKelompok");
   const filterStatus = document.getElementById("filterStatus");
   const filterJenisKelamin = document.getElementById("filterJenisKelamin");
-  const paginationBar = document.getElementById("paginationBar");
-  const rowInfo = document.getElementById("rowInfo");
-  const pageSizeSelect = document.getElementById("pageSizeSelect");
-  const btnFirst = document.getElementById("btnFirst");
-  const btnPrev = document.getElementById("btnPrev");
-  const btnNext = document.getElementById("btnNext");
-  const btnLast = document.getElementById("btnLast");
+
+  const pager = Pager.create({ pageSize: 25, itemLabel: "siswa", onPageChange: renderTable });
+  pager.bind();
 
   const form = document.getElementById("siswaForm");
   const modalTitle = document.getElementById("modalTitle");
@@ -57,40 +51,17 @@
       form.addEventListener("submit", onSubmit);
     }
     searchInput.addEventListener("input", () => {
-      page = 1;
+      pager.reset();
       renderTable();
     });
     filterKelompok.addEventListener("change", resetPage);
     filterStatus.addEventListener("change", resetPage);
     if (filterJenisKelamin) filterJenisKelamin.addEventListener("change", resetPage);
-
-    pageSizeSelect.addEventListener("change", () => {
-      pageSize = Number(pageSizeSelect.value) || 25;
-      page = 1;
-      renderTable();
-    });
-    btnFirst.addEventListener("click", () => goToPage(1));
-    btnPrev.addEventListener("click", () => goToPage(page - 1));
-    btnNext.addEventListener("click", () => goToPage(page + 1));
-    btnLast.addEventListener("click", () => goToPage(totalPages()));
   }
 
   function resetPage() {
-    page = 1;
+    pager.reset();
     renderTable();
-  }
-
-  function totalPages() {
-    return Math.max(1, Math.ceil(filteredCount / pageSize));
-  }
-
-  function goToPage(next) {
-    const target = Math.min(Math.max(1, next), totalPages());
-    if (target === page) return;
-    page = target;
-    renderTable();
-    const wrap = document.querySelector(".table-wrap");
-    if (wrap) wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   async function loadData() {
@@ -107,7 +78,7 @@
       filteredCount = 0;
       updateEmptyState();
       emptyState.classList.remove("hidden");
-      updatePager();
+      pager.setTotal(0);
     }
   }
 
@@ -115,15 +86,6 @@
     const opts = UI.optionsHtml(kelompokOptions);
     UI.fillSelect(filterKelompok, kelompokOptions, "Semua Kelompok");
     document.getElementById("kelompokList").innerHTML = opts;
-  }
-
-  // Urutan tampil tetap ascending dari BSA-0001 (barcode dibuat sequence saat
-  // pendaftaran, jadi urutan angka = urutan input terbaru di akhir).
-  function compareBarcode(a, b) {
-    const na = Number.parseInt(String(a.barcode || "").replace(/\D+/g, ""), 10);
-    const nb = Number.parseInt(String(b.barcode || "").replace(/\D+/g, ""), 10);
-    if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
-    return String(a.barcode || "").localeCompare(String(b.barcode || ""), "id");
   }
 
   function getFiltered() {
@@ -140,23 +102,7 @@
         const matchJk = !jk || s.jenisKelamin === jk;
         return matchQ && matchKel && matchStatus && matchJk;
       })
-      .sort(compareBarcode);
-  }
-
-  function updatePager() {
-    const pages = totalPages();
-    if (!filteredCount) {
-      paginationBar.classList.add("hidden");
-      return;
-    }
-    paginationBar.classList.remove("hidden");
-    const from = (page - 1) * pageSize + 1;
-    const to = Math.min(page * pageSize, filteredCount);
-    rowInfo.textContent = `${from}-${to} dari ${filteredCount} siswa · hal. ${page}/${pages}`;
-    btnFirst.disabled = page === 1;
-    btnPrev.disabled = page === 1;
-    btnNext.disabled = page >= pages;
-    btnLast.disabled = page >= pages;
+      .sort(UI.compareBarcode);
   }
 
   function updateEmptyState() {
@@ -174,16 +120,12 @@
   function renderTable() {
     const filtered = getFiltered();
     filteredCount = filtered.length;
-    if (page > totalPages()) page = totalPages();
-
-    const start = (page - 1) * pageSize;
-    const rows = filtered.slice(start, start + pageSize);
+    const rows = pager.slice(filtered);
 
     if (!rows.length) {
       tableBody.innerHTML = "";
       updateEmptyState();
       emptyState.classList.remove("hidden");
-      updatePager();
       return;
     }
     emptyState.classList.add("hidden");
@@ -217,8 +159,6 @@
       tableBody.querySelectorAll("[data-edit]").forEach((btn) => btn.addEventListener("click", () => openForm(allSiswa.find((s) => s.id === btn.dataset.edit))));
       tableBody.querySelectorAll("[data-delete]").forEach((btn) => btn.addEventListener("click", () => onDelete(btn.dataset.delete)));
     }
-
-    updatePager();
   }
 
   function openForm(siswa) {
@@ -241,7 +181,7 @@
     const id = document.getElementById("fId").value;
     const jenisKelamin = document.getElementById("fJenisKelamin").value || "Putra";
     const rawKelompok = document.getElementById("fKelompok").value.trim();
-    // Fallback otomatis [JK:...] pada kelompok jika Edge Function belum dideploy ulang
+    // Fallback [JK:...] di kelompok bila Edge Function belum dideploy ulang.
     const fallbackKelompok = `[JK:${jenisKelamin}]${rawKelompok}`;
 
     const payload = {

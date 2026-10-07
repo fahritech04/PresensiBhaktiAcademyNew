@@ -1,23 +1,11 @@
 -- =============================================================================
--- HARDENING KEAMANAN — Bhakti Sebatung Academy
--- File DELTA: jalan di SQL Editor di project Supabase yang ALREADY punya
--- schema.sql. Tidak mengubah aturan bisnis — hanya diamankan layer anti
--- brute-force, hashing password & token sesi.
---
--- Jalanan: buka file ini di SQL Editor, copy semua isinya, Run. Aman
--- dijalankan ulang (semua create/replace idempotent).
--- URUTAN WAJIB deploy: schema.sql -> hardening.sql -> backdate_presensi.sql
--- (re-run schema.sql mengreset fungsi rpc_ -> re-run hardening + backdate).
---
--- Isi:
---   1. app_config() + key config baru (ip_max_login_attempts, delay login)
---   2. Tabel login_attempts_ip (anti brute-force per-IP, layer 2)
---   3. sessions: token sesi disimpan HASH (sha256) bukan plaintext
---   4. hash_password -> bcrypt (cost 11), verify_password support hash
---      SHA-256 peppered lama (auto-upgrade saat login sukses)
---   5. rpc_login v2: lockout per-IP + delay jitter + bcrypt + upgrade hash
---   6. rpc_verify_token v2: lookup by token_hash
---   7. REVOKE akses anon/authenticated untuk fungsi baru
+-- HARDENING KEAMANAN — delta di atas schema.sql. Tidak mengubah aturan bisnis,
+-- hanya lapisan anti brute-force + hashing password & token sesi. Idempotent.
+-- URUTAN WAJIB: schema.sql → hardening.sql → backdate_presensi.sql
+-- (re-run schema.sql mengreset rpc_ → re-run hardening + backdate).
+-- Isi: config ip_max_login_attempts · login_attempts_ip (anti brute per-IP) ·
+-- token sesi SHA-256 · bcrypt password + auto-upgrade hash lama · rpc_login v2
+-- (lockout per-IP + delay jitter) · rpc_verify_token v2 · revoke akses.
 -- =============================================================================
 
 -- =============================================================================

@@ -1,17 +1,10 @@
 -- =============================================================================
--- FEATURE: PRESENSI PELATIH — Bhakti Sebatung Academy
--- File DELTA: jalan di SQL Editor. Aman dijalankan ulang (idempotent).
---
--- Isi:
---   1. app_config() — key lama + barcode_prefix_pelatih
---   2. Tabel pelatih (barcode = PK, TANPA id surrogate) + barcode_pelatih_seq
---   3. Tabel presensi_pelatih (denormalisasi nama; 1 pelatih 1x/hari)
---   4. Helper next_barcode_pelatih()
---   5. Fungsi rpc_*: get/add/update/delete pelatih, scan, list presensi pelatih
---   6. REVOKE akses anon/authenticated (ikut pola schema.sql)
---
--- URUTAN WAJIB deploy: schema.sql -> hardening.sql -> backdate_presensi.sql
--- -> pelatih.sql. Re-run schema.sql mengreset fungsi rpc_ -> re-run semua delta.
+-- FEATURE: PRESENSI PELATIH — delta, idempotent.
+-- Isi: config barcode_prefix_pelatih · tabel pelatih (barcode = PK) +
+-- barcode_pelatih_seq · tabel presensi_pelatih (1 pelatih 1x/hari) ·
+-- helper next_barcode_pelatih() · rpc_* pelatih (get/add/update/delete, scan,
+-- list) · revoke akses anon/authenticated.
+-- URUTAN: schema.sql → hardening.sql → backdate_presensi.sql → pelatih.sql.
 -- =============================================================================
 
 -- =============================================================================

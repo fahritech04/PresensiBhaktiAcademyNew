@@ -3,8 +3,6 @@
 
   let currentRows = [];
   let total = 0;
-  let page = 0; // 0-based
-  let pageSize = 500;
   let mode = "detail";
   let rekapRows = [];
 
@@ -22,11 +20,15 @@
   const rowInfo = document.getElementById("rowInfo");
   const sizeGroup = document.getElementById("sizeGroup");
   const navGroup = document.getElementById("navGroup");
-  const pageSizeSelect = document.getElementById("pageSizeSelect");
-  const btnFirst = document.getElementById("btnFirst");
-  const btnPrev = document.getElementById("btnPrev");
-  const btnNext = document.getElementById("btnNext");
-  const btnLast = document.getElementById("btnLast");
+
+  const pager = Pager.create({
+    zeroBased: true,
+    pageSize: 500,
+    itemLabel: "data",
+    hideWhenEmpty: false,
+    onPageChange: loadData,
+  });
+  pager.bind();
 
   init();
 
@@ -39,34 +41,12 @@
 
     tableBody.innerHTML = UI.skeletonRows(4, 4);
     document.getElementById("btnFilter").addEventListener("click", () => {
-      page = 0;
+      pager.reset();
       loadData();
     });
-    if (btnPrev) btnPrev.addEventListener("click", () => goToPage(page - 1));
-    if (btnNext) btnNext.addEventListener("click", () => goToPage(page + 1));
-    if (btnFirst) btnFirst.addEventListener("click", () => goToPage(0));
-    if (btnLast) btnLast.addEventListener("click", () => goToPage(totalPages() - 1));
-    if (pageSizeSelect) {
-      pageSizeSelect.addEventListener("change", () => {
-        pageSize = Number(pageSizeSelect.value) || 500;
-        page = 0;
-        loadData();
-      });
-    }
     btnDetail.addEventListener("click", () => setMode("detail"));
     btnRekap.addEventListener("click", () => setMode("rekap"));
     await loadData();
-  }
-
-  function totalPages() {
-    return Math.max(1, Math.ceil(total / pageSize));
-  }
-
-  function goToPage(next) {
-    const target = Math.min(Math.max(0, next), totalPages() - 1);
-    if (target === page) return;
-    page = target;
-    loadData();
   }
 
   async function loadData() {
@@ -76,45 +56,25 @@
     }
     tableBody.innerHTML = UI.skeletonRows(4, 4);
     try {
+      const prevPage = pager.currentPage();
       const data = await Api.call("getPresensiPelatihList", {
         dari: dari.value,
         sampai: sampai.value,
         status: status.value,
-        limit: pageSize,
-        offset: page * pageSize,
+        limit: pager.pageSize(),
+        offset: prevPage * pager.pageSize(),
       });
       currentRows = data.rows || [];
       total = Number(data.total ?? currentRows.length);
       // Halaman bisa jadi tidak berlaku lagi setelah filter/total berubah.
-      if (page > totalPages() - 1) {
-        page = totalPages() - 1;
-        return loadData();
-      }
+      pager.setTotal(total);
+      if (pager.currentPage() !== prevPage) return loadData();
       renderTable();
-      updatePager();
     } catch (err) {
       UI.toast(err.message, "error");
       tableBody.innerHTML = "";
       emptyState.classList.remove("hidden");
     }
-  }
-
-  function updatePager() {
-    if (!btnPrev || !btnNext) return;
-    const pages = totalPages();
-    const isFirst = page === 0;
-    const isLast = (page + 1) * pageSize >= total;
-    btnFirst.disabled = isFirst;
-    btnPrev.disabled = isFirst;
-    btnNext.disabled = isLast;
-    btnLast.disabled = isLast;
-    if (!total) {
-      rowInfo.textContent = "0 data";
-      return;
-    }
-    const from = page * pageSize + 1;
-    const to = Math.min((page + 1) * pageSize, total);
-    rowInfo.textContent = `${from}-${to} dari ${total} data · hal. ${page + 1}/${pages}`;
   }
 
   function renderTable() {
@@ -150,7 +110,7 @@
     if (sizeGroup) sizeGroup.style.display = isRekap ? "none" : "";
     if (navGroup) navGroup.style.display = isRekap ? "none" : "";
     rowInfo.style.display = isRekap ? "none" : "";
-    page = 0;
+    pager.reset();
     loadData();
   }
 

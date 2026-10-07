@@ -1,20 +1,3 @@
-let supabaseClientPromise = null;
-function getSupabaseClient() {
-  if (!supabaseClientPromise) {
-    supabaseClientPromise = import("https://esm.sh/@supabase/supabase-js@2.45.4")
-      .then((mod) =>
-        mod.createClient(APP_CONFIG.SUPABASE_URL, APP_CONFIG.SUPABASE_ANON_KEY, {
-          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-        }),
-      )
-      .catch((err) => {
-        supabaseClientPromise = null;
-        throw new Error("Gagal memuat library login Google. Cek koneksi internet.");
-      });
-  }
-  return supabaseClientPromise;
-}
-
 document.addEventListener("DOMContentLoaded", () => {
   Auth.redirectIfLoggedIn();
   bindAdminForm();
@@ -63,7 +46,7 @@ function bindGoogleLogin() {
     const btnGoogleText = document.getElementById("btnGoogleText");
     if (btnGoogleText) btnGoogleText.innerHTML = '<span class="spin-sm"></span> Menghubungkan...';
     try {
-      const supabase = await getSupabaseClient();
+      const supabase = await Auth.getSupabaseClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: window.location.origin + "/scan/" },

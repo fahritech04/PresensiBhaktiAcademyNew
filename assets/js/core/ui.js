@@ -24,6 +24,10 @@ const UI = (() => {
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>',
     download:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+    monitoring:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><path d="M9 12l2 2 4-4"/></svg>',
+    evaluasi:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
   };
 
   Object.keys(ICONS).forEach((key) => {
@@ -35,6 +39,8 @@ const UI = (() => {
     { key: "siswa", href: "/siswa/", label: "Siswa", icon: ICONS.siswa, public: true },
     { key: "scan", href: "/scan/", label: "Scan", icon: ICONS.scan },
     { key: "presensi", href: "/presensi/", label: "Riwayat", icon: ICONS.presensi, adminOnly: true },
+    { key: "monitoring", href: "/monitoring/", label: "Monitoring", icon: ICONS.monitoring },
+    { key: "evaluasi", href: "/evaluasi/", label: "Evaluasi", icon: ICONS.evaluasi, adminOnly: true },
     { key: "iuran", href: "/iuran/", label: "Iuran", icon: ICONS.wallet, adminOnly: true },
     { key: "cetak", href: "/cetak-barcode/", label: "Cetak QR", icon: ICONS.cetak, adminOnly: true },
     { key: "pelatih", href: "/pelatih/", label: "Pelatih", icon: ICONS.pelatih, adminOnly: true },
@@ -43,8 +49,7 @@ const UI = (() => {
   ];
 
   /* ---------------------------- PAGE BOOT ---------------------------- */
-  /** Boot standar halaman terproteksi: guard sesi + render shell navigasi.
-   *  Urutan selalu sama di semua halaman (guard dulu, lalu shell). */
+  /** Boot halaman: guard sesi + render shell navigasi (urutan konsisten). */
   function renderPage({ active, title, desc, allowPublic = false }) {
     if (!allowPublic) Auth.guardPage();
     renderShell({ active, title, desc });
@@ -115,7 +120,7 @@ const UI = (() => {
     const btnLogout = document.getElementById("btnLogout");
     if (btnLogout) btnLogout.addEventListener("click", () => Auth.logout());
 
-    // Nav drawer (mobile/tablet): buka/tutup + close via backdrop/tombol/Escape/link.
+    // Nav drawer: buka/tutup + close via backdrop/tombol/Escape/link.
     const navToggle = document.getElementById("navToggle");
     const navDrawer = document.getElementById("navDrawer");
     const openDrawer = () => {
@@ -138,8 +143,7 @@ const UI = (() => {
       if (e.key === "Escape" && navDrawer.classList.contains("open")) closeDrawer();
     });
 
-    // Fallback: kalau logo belum ada / gagal dimuat, balik ke kotak teks "BB"
-    // supaya tidak muncul ikon gambar rusak.
+    // Fallback: logo gagal dimuat → kotak teks "BB" (hindari ikon rusak).
     const brandLogo = document.getElementById("brandLogo");
     if (brandLogo) {
       brandLogo.addEventListener(
@@ -214,7 +218,7 @@ const UI = (() => {
   }
 
   /* --------------------------- SKELETON LOADER --------------------------- */
-  /** Skeleton baris tabel — dipakai saat data sedang di-fetch, terasa lebih cepat drpd veil penuh. */
+  /** Skeleton baris tabel (saat fetch) — terasa lebih cepat drpd layar kosong. */
   function skeletonRows(colCount, rowCount = 4) {
     let html = "";
     for (let r = 0; r < rowCount; r++) {
@@ -368,6 +372,7 @@ const UI = (() => {
   /* ---------------------------- FORMATTERS ---------------------------- */
   const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu"];
   const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const BULAN_NAMA = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
   function formatTanggal(dateLike, withHari = false) {
     const d = new Date(dateLike);
@@ -395,9 +400,32 @@ const UI = (() => {
     return "Rp" + num.toLocaleString("id-ID");
   }
 
+  /** Urutan barcode ascending (BSA-0001, BSA-0002, dst). */
+  function compareBarcode(a, b) {
+    const na = Number.parseInt(String(a.barcode || "").replace(/\D+/g, ""), 10);
+    const nb = Number.parseInt(String(b.barcode || "").replace(/\D+/g, ""), 10);
+    if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+    return String(a.barcode || "").localeCompare(String(b.barcode || ""), "id");
+  }
+
+  /** Isi select Bulan & Tahun (2 th ke belakang s/d 1 th ke depan, default sekarang).
+   *  Return { bulan, tahun } utk dipakai halaman. */
+  function fillBulanTahun(filterBulan, filterTahun, now = new Date()) {
+    const bulan = now.getMonth() + 1;
+    const tahun = now.getFullYear();
+    filterBulan.innerHTML = BULAN_NAMA.slice(1)
+      .map((nama, i) => `<option value="${i + 1}">${nama}</option>`)
+      .join("");
+    filterBulan.value = String(bulan);
+    const opts = [];
+    for (let y = tahun - 2; y <= tahun + 1; y++) opts.push(y);
+    filterTahun.innerHTML = optionsHtml(opts);
+    filterTahun.value = String(tahun);
+    return { bulan, tahun };
+  }
+
   /* ---------------------- DAFTAR HADIR HARI INI ---------------------- */
-  /** Render dua kolom (Siswa | Pelatih) side-by-side untuk "Presensi Hari Ini"
-   *  di halaman Scan. */
+  /** Dua kolom (Siswa | Pelatih) untuk "Presensi Hari Ini" di halaman Scan. */
   function todayAttendanceHtml(siswa, pelatih) {
     const byTime = (a, b) => (a.waktu < b.waktu ? 1 : -1);
     const row = (r) => `
@@ -435,5 +463,8 @@ const UI = (() => {
     fillSelect,
     setButtonLoading,
     todayAttendanceHtml,
+    compareBarcode,
+    BULAN_NAMA,
+    fillBulanTahun,
   };
 })();

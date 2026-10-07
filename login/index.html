@@ -6,7 +6,7 @@
     <title>Masuk &middot; Bhakti Sebatung Academy</title>
     <link rel="preload" as="image" href="/assets/img/foto_academy.jpg" />
     <script src="/assets/js/core/head.js?v=20260923-3"></script>
-    <link rel="stylesheet" href="/assets/css/style.css?v=20260923-9" />
+    <link rel="stylesheet" href="/assets/css/style.css?v=20261007-2" />
     <script>
       (function () {
         try {
@@ -266,8 +266,6 @@
         box-shadow: 0 24px 64px #021e3433;
         animation: court-enter 700ms 100ms ease-out both;
       }
-      .academy-login .panel-kicker { display: flex; align-items: center; gap: 10px; margin-bottom: 25px; }
-      .academy-login .panel-kicker > span:last-child { font-family: var(--font-mono); color: #647988; font-size: 10px; letter-spacing: 0.14em; }
       .academy-login .panel-icon {
         display: grid;
         place-items: center;
@@ -293,20 +291,6 @@
         border-left: 1px solid #e6ecef;
       }
       .academy-login .auth-col .sub { min-height: 44px; }
-      .academy-login .panel-kicker--admin::before {
-        content: '';
-        width: 13px;
-        height: 13px;
-        border-radius: 3px;
-        background: var(--court-orange);
-      }
-      .academy-login .panel-kicker--google::before {
-        content: '';
-        width: 13px;
-        height: 13px;
-        border-radius: 3px;
-        background: conic-gradient(from -45deg, #ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0);
-      }
       .academy-login .pelatih-access {
         display: grid;
         gap: 7px;
@@ -505,7 +489,6 @@
         .academy-login .hero-caption { padding-top: 20px; }
         .academy-login .hero-steps { margin-top: 20px; padding-top: 16px; }
         .academy-login .login-panel { padding-block: 30px; }
-        .academy-login .panel-kicker { margin-bottom: 16px; }
         .academy-login .login-panel .sub { margin-bottom: 22px; }
         .academy-login .field { margin-bottom: 16px; }
         .academy-login .login-foot { margin-top: 18px; padding-top: 16px; }
@@ -551,7 +534,6 @@
         .academy-login .hero-caption strong { display: none; }
         .academy-login .hero-steps { margin-top: 19px; padding-top: 15px; }
         .academy-login .login-panel { padding: 30px; border-radius: 22px; }
-        .academy-login .panel-kicker { margin-bottom: 20px; }
         .academy-login .login-bottom { flex-wrap: wrap; padding-top: 0; gap: 6px; }
       }
       @media (max-width: 380px) {
@@ -664,9 +646,6 @@
 
           <div class="auth-split">
             <section class="auth-col auth-col--admin" aria-labelledby="loginTitle">
-              <div class="panel-kicker panel-kicker--admin">
-                <span>ADMIN</span>
-              </div>
               <h2 id="loginTitle">Masuk Admin</h2>
               <p class="sub">Kelola presensi, data siswa, dan iuran latihan.</p>
 
@@ -696,9 +675,6 @@
             </section>
 
             <section class="auth-col auth-col--pelatih" aria-labelledby="pelatihTitle">
-              <div class="panel-kicker panel-kicker--google">
-                <span>PELATIH</span>
-              </div>
               <h2 id="pelatihTitle">Masuk Pelatih</h2>
               <p class="sub">Gunakan akun Google masuk sebagai pelatih</p>
 
@@ -765,10 +741,10 @@
         updateMotion();
       })();
     </script>
-    <script src="/assets/js/core/config.js?v=20260923-2" defer></script>
+    <script src="/assets/js/core/config.js?v=20260927-2" defer></script>
     <script src="/assets/js/core/api.js?v=20260927-1" defer></script>
-    <script src="/assets/js/core/auth.js?v=20260926-5" defer></script>
-    <script src="/assets/js/core/ui.js?v=20260927-1" defer></script>
-    <script src="/assets/js/pages/login.js?v=20260926-2" defer></script>
+    <script src="/assets/js/core/auth.js?v=20261007-1" defer></script>
+    <script src="/assets/js/core/ui.js?v=20261007-1" defer></script>
+    <script src="/assets/js/pages/login.js?v=20261007-1" defer></script>
   </body>
 </html>

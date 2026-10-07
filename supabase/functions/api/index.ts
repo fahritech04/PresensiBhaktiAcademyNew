@@ -1,29 +1,8 @@
-// =============================================================================
-// Bhakti Sebatung Academy — Edge Function "api" (versi HARDENED)
-//
-// Pengganti Google Apps Script Web App (assets/code.gs -> doPost/doGet).
-//
-// TIDAK ADA logic bisnis di sini. File ini hanya:
-//   1. Baca { action, token, payload } dari request (POST saja).
-//   2. Origin allowlist (ALLOWED_ORIGIN) — blok request dari domain lain.
-//   3. Cek token sesi lewat rpc_verify_token (kalau action bukan "login").
-//   4. Panggil fungsi Postgres rpc_xxx yang sesuai (lihat supabase/schema.sql).
-//   5. Bungkus hasil jadi { ok:true, data } / { ok:false, message, code } —
-//      PERSIS dengan kontrak lama, jadi file frontend tidak berubah.
-//
-// Hardening vs versi lama:
-//   - CORS kini diatur ke ALLOWED_ORIGIN (bukan "*").
-//   - Fingerprint GET ("API is running") diperha.
-//   - GET untuk action diperha (token tidak pernah masuk URL query string).
-//   - Login: IP client (x-forwarded-for) dipasar ke rpc_login (anti
-//     brute-force per-IP layer 2 di database) + limiter memory kasar.
-//   - Header keamanan: Cache-Control no-store, X-Content-Type-Options.
-//   - Aksi tidak dikenali -> pesan generik (tidak refleks input).
-//
-// Deploy:
-//   supabase secrets set ALLOWED_ORIGIN=https://bhaktisebatung.web.id
-//   supabase functions deploy api --no-verify-jwt
-// =============================================================================
+// Edge Function "api" (HARDENED) — router tipis, TANPA logic bisnis.
+// 1) Origin allowlist 2) verifikasi token sesi 3) panggil rpc_xxx Postgres
+// 4) bungkus { ok:true, data } / { ok:false, message, code } — kontrak sama
+// dengan frontend. Deploy: `supabase functions deploy api --no-verify-jwt`,
+// secret: ALLOWED_ORIGIN=https://bhaktisebatung.web.id
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
@@ -34,11 +13,9 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
-// Domain GitHub Pages / custom domain. Bisa CSV multi-domain:
-//   ALLOWED_ORIGIN=https://bhaktisebatung.web.id,https://user.github.io
+// Domain GitHub Pages / custom (CSV multi-domain: koma/spasi).
 function allowedOrigins(): string[] {
   const raw = (Deno.env.get("ALLOWED_ORIGIN") || "https://bhaktisebatung.web.id");
-  // Tolerant separator: comma O sis space (mis. user jenis type).
   return raw.split(/[,\s]+/).map((s) => s.trim().toLowerCase()).filter((s) => s !== "");
 }
 
@@ -74,8 +51,7 @@ function clientIp(req: Request): string {
 
 const PUBLIC_ACTIONS = new Set(["login", "loginGoogle", "getDashboardStats", "getSiswaList"]);
 
-// Aksi yang boleh dipanggil role "Pelatih" (whitelist deny-by-default).
-// Pelatih hanya scan siswa + baca data — TIDAK boleh scan pelatih, CRUD, iuran, rekap.
+// Whitelist role Pelatih (deny-by-default): scan siswa + baca data, bukan CRUD/iuran.
 const PELATIH_ACTIONS = new Set([
   "scanPresensi",
   "getPresensiList",
@@ -87,7 +63,7 @@ const PELATIH_ACTIONS = new Set([
   "getPelatihSelf",
 ]);
 
-// Burst limiter memory (per-instance, best-effort — layer final di database).
+// Burst limiter memory (best-effort; layer final di database).
 const LOGIN_LIMIT = { max: 30, windowMs: 60_000 };
 const loginHits = new Map<string, number[]>();
 function allowLoginBurst(ip: string): boolean {
@@ -121,20 +97,18 @@ async function call(fn: string, params: Record<string, unknown>) {
   return data;
 }
 
-// Nilai "kosong" (undefined/""); dipetakan ke null supaya cocok dengan
-// parameter opsional di fungsi Postgres (COALESCE utk default).
+// Nilai kosong (undefined/"") → null, cocok utk param opsional Postgres.
 function orNull(v: unknown) {
   return v === undefined || v === "" ? null : v;
 }
 
 type Handler = (payload: any, session: any) => Promise<unknown>;
 
-// Peta action -> fungsi Postgres. Nama action & bentuk payload SAMA PERSIS
-// dengan yang sudah dipanggil oleh assets/js/pages/*.js — tidak berubah.
+// Peta action → rpc Postgres. Nama action & payload SAMA PERSIS dengan frontend.
 const ACTIONS: Record<string, Handler> = {
   login: (p) => call("rpc_login", { p_username: p.username, p_password: p.password, p_ip: CURRENT_IP }),
 
-  // Verifikasi access_token Supabase Auth (Google) -> find-or-create pelatih + session role Pelatih.
+  // Verifikasi access_token Google → find-or-create pelatih + session role Pelatih.
   loginGoogle: async (p) => {
     const accessToken = p.accessToken;
     if (!accessToken) throw new Error("Token Google tidak valid.");
@@ -150,8 +124,7 @@ const ACTIONS: Record<string, Handler> = {
     });
   },
 
-  // p_public = true untuk non-admin (publik & pelatih) -> data disanitasi
-  // (tanpa PII di siswa, tanpa agregat iuran di dashboard).
+  // p_public: non-admin → data disanitasi (tanpa PII / agregat iuran).
   getDashboardStats: (_p, session) => call("rpc_get_dashboard_stats", { p_public: !session || session.role === "Pelatih" }),
 
   getSiswaList: (_p, session) => call("rpc_get_siswa_list", { p_public: !session || session.role === "Pelatih" }),
@@ -226,11 +199,8 @@ const ACTIONS: Record<string, Handler> = {
   batalkanIuran: (p) =>
     call("rpc_batalkan_iuran", { p_siswa_id: p.siswaId, p_bulan: p.bulan, p_tahun: p.tahun }),
 
-  // Catatan: p_tanggal_bayar sengaja pakai orNull (string kosong -> null ->
-  // TIDAK diupdate), tapi p_keterangan TIDAK di-orNull supaya string kosong
-  // ("") tetap tersimpan sebagai "sengaja dikosongkan" — sama seperti logic
-  // actionUpdateIuran yang lama (updates hanya di-skip kalau field-nya
-  // benar-benar tidak dikirim, bukan kalau dikirim kosong).
+  // p_tanggal_bayar pakai orNull ("" → null → tidak diupdate), tapi p_keterangan
+  // TIDAK — string kosong tetap tersimpan ("sengaja dikosongkan").
   updateIuran: (p) =>
     call("rpc_update_iuran", {
       p_id: p.id,
@@ -302,8 +272,7 @@ Deno.serve(async (req) => {
     const handler = ACTIONS[action];
     if (!handler) return jsonError(req, "Aksi tidak dikenali.", "UNKNOWN_ACTION");
 
-    // Verifikasi token bila ada (supaya admin yang login tetap dapat data penuh),
-    // tapi hanya wajib untuk aksi non-publik.
+    // Token opsional (admin dapat data penuh); wajib hanya utk aksi non-publik.
     let session: any = null;
     if (token) {
       session = await call("rpc_verify_token", { p_token: token });

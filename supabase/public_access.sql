@@ -1,16 +1,9 @@
 -- =============================================================================
--- FEATURE: AKSES PUBLIK (tanpa login) — Bhakti Sebatung Academy
--- File DELTA: jalan di SQL Editor. Aman dijalankan ulang (idempotent).
---
--- Publik (tanpa token) boleh melihat Dashboard & daftar siswa, TANPA data
--- sensitif:
---   - Dashboard  : tanpa card iuran (totalTerkumpul dkk TIDAK dikirim)
---   - Siswa      : tanpa nama_ortu & hp_ortu (kontak wali TIDAK dikirim)
---
--- Caranya: kedua fungsi di bawah menerima p_public (default false). Edge Function
--- mengirim p_public = true ketika request datang tanpa sesi valid.
--- URUTAN deploy: schema.sql -> hardening.sql -> backdate_presensi.sql ->
--- pelatih.sql -> public_access.sql.
+-- FEATURE: AKSES PUBLIK (tanpa login) — delta, idempotent.
+-- Publik boleh lihat Dashboard & daftar siswa TANPA data sensitif: dashboard
+-- tanpa card iuran, siswa tanpa nama_ortu/hp_ortu. Caranya: fungsi menerima
+-- p_public (Edge Function kirim true saat tanpa sesi valid).
+-- URUTAN: ... → pelatih.sql → public_access.sql.
 -- =============================================================================
 
 -- Drop signature lama (0 arg) supaya tidak jadi overload duplikat.

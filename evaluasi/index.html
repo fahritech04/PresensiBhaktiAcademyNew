@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Evaluasi Bulanan &middot; Bhakti Sebatung Academy</title>
+    <script src="/assets/js/core/head.js?v=20260923-3"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20261007-2" />
+    <style>
+      .skill-bar-row {
+        display: grid;
+        grid-template-columns: 130px 1fr 34px;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+      .skill-bar-row .lbl {
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+      .skill-bar-track {
+        height: 8px;
+        border-radius: 99px;
+        background: var(--line-soft);
+        overflow: hidden;
+      }
+      .skill-bar-fill {
+        height: 100%;
+        background: var(--orange-active);
+        border-radius: 99px;
+      }
+      .skill-bar-row .val {
+        text-align: right;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .riwayat-sesi {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid var(--line-soft);
+        border-radius: 10px;
+        margin-bottom: 18px;
+      }
+      .riwayat-sesi .item {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line-soft);
+        font-size: 13px;
+      }
+      .riwayat-sesi .item:last-child {
+        border-bottom: none;
+      }
+      .riwayat-sesi .item .tgl {
+        font-weight: 700;
+        color: var(--text);
+      }
+      .riwayat-sesi .item .avg {
+        float: right;
+        color: var(--text-muted);
+      }
+      .riwayat-sesi .item p {
+        margin: 4px 0 0;
+        color: var(--text-muted);
+      }
+      .riwayat-kosong {
+        padding: 16px;
+        text-align: center;
+        color: var(--text-faint);
+        font-size: 13px;
+      }
+      .section-label {
+        font-weight: 800;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-faint);
+        margin: 0 0 10px;
+      }
+      .eval-status {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 99px;
+        display: inline-block;
+      }
+      .eval-status.done {
+        background: rgba(22, 88, 123, 0.12);
+        color: var(--teal);
+      }
+      .eval-status.pending {
+        background: rgba(224, 64, 43, 0.1);
+        color: var(--red);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div id="topbar-root"></div>
+
+      <main class="view" id="mainContent" tabindex="-1">
+        <div class="view-head" id="viewHead"></div>
+
+        <div class="stats-grid section-gap">
+          <div class="num-tile tone-teal">
+            <div class="label">Sudah Dievaluasi</div>
+            <div class="num" id="statSudah">&ndash;</div>
+            <div class="foot">Bulan terpilih</div>
+          </div>
+          <div class="num-tile tone-red">
+            <div class="label">Belum Dievaluasi</div>
+            <div class="num" id="statBelum">&ndash;</div>
+            <div class="foot">Sudah ada data latihan</div>
+          </div>
+          <div class="num-tile tone-orange">
+            <div class="label">Rata-rata Keseluruhan</div>
+            <div class="num" id="statRata">&ndash;</div>
+            <div class="foot">Semua kategori, bulan ini</div>
+          </div>
+        </div>
+
+        <div class="card data-card">
+          <div class="card-body">
+            <div class="toolbar filter-toolbar">
+              <div class="field mb-0">
+                <label for="filterBulan">Bulan</label>
+                <select class="input" id="filterBulan"></select>
+              </div>
+              <div class="field mb-0">
+                <label for="filterTahun">Tahun</label>
+                <select class="input" id="filterTahun"></select>
+              </div>
+              <div class="field mb-0">
+                <label for="filterKelompok">Kelompok</label>
+                <select class="input" id="filterKelompok">
+                  <option value="">Semua</option>
+                </select>
+              </div>
+              <div class="search-input" style="flex: 1 1 200px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" class="input" id="searchInput" aria-label="Cari nama siswa" placeholder="Cari nama siswa..." />
+              </div>
+            </div>
+          </div>
+          <div class="card-body pad-0">
+            <p class="table-hint no-print">Geser tabel untuk melihat kolom lainnya.</p>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Tabel evaluasi bulanan siswa">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col">Nama Siswa</th>
+                    <th scope="col">Jenis Kelamin</th>
+                    <th scope="col">Jumlah Sesi</th>
+                    <th scope="col">Rata-rata</th>
+                    <th scope="col">Status Evaluasi</th>
+                    <th scope="col">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            <div id="emptyState" class="empty-state hidden">
+              <h3 id="emptyTitle">Belum ada data latihan bulan ini</h3>
+              <p id="emptyDesc">Isi dulu Monitoring Latihan supaya ada data untuk dievaluasi.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div id="nav-root"></div>
+    </div>
+
+    <!-- Modal Detail & Evaluasi Bulanan -->
+    <div class="modal-backdrop" id="evaluasiModal">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc" style="max-width: 560px">
+        <div class="modal-head">
+          <div>
+            <h3 id="modalTitle">Evaluasi Bulanan</h3>
+            <p class="desc" id="modalDesc"></p>
+          </div>
+          <button type="button" class="modal-close" id="btnCloseModal" aria-label="Tutup evaluasi">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <form id="evaluasiForm">
+          <div class="modal-body">
+            <input type="hidden" id="fId" />
+            <input type="hidden" id="fSiswaId" />
+            <input type="hidden" id="fNamaSiswa" />
+            <input type="hidden" id="fKelompok" />
+
+            <p class="section-label">Rata-rata Kemampuan Bulan Ini</p>
+            <div id="skillBarsRoot" style="margin-bottom: 18px"></div>
+
+            <p class="section-label">Riwayat Catatan Per Sesi</p>
+            <div class="riwayat-sesi" id="riwayatSesiRoot"></div>
+
+            <div class="form-grid">
+              <div class="field full">
+                <label for="fKelebihan">Kelebihan (Kekuatan)</label>
+                <textarea class="input" id="fKelebihan" rows="3" placeholder="cth. Shooting sudah stabil, cukup percaya diri saat 1 on 1."></textarea>
+              </div>
+              <div class="field full">
+                <label for="fKekurangan">Kekurangan (Area Perbaikan)</label>
+                <textarea class="input" id="fKekurangan" rows="3" placeholder="cth. Masih ragu saat defense man to man, footwork lay-up perlu dilatih lagi."></textarea>
+              </div>
+              <div class="field full">
+                <label for="fRekomendasi">Rekomendasi / Program Lanjutan</label>
+                <textarea class="input" id="fRekomendasi" rows="3" placeholder="cth. Fokus latihan bulan depan: footwork & defense dasar."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button type="button" class="btn btn-ghost" id="btnBatal">Tutup</button>
+            <button type="submit" class="btn btn-primary" id="btnSimpan">Simpan Evaluasi</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/assets/js/core/config.js?v=20260927-2" defer></script>
+    <script src="/assets/js/core/api.js?v=20260927-1" defer></script>
+    <script src="/assets/js/core/api-gas.js?v=20261007-1" defer></script>
+    <script src="/assets/js/core/auth.js?v=20261007-1" defer></script>
+    <script src="/assets/js/core/ui.js?v=20261007-1" defer></script>
+    <script src="/assets/js/pages/evaluasi.js?v=20261007-3" defer></script>
+  </body>
+</html>

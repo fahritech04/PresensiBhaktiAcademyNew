@@ -1,23 +1,17 @@
 /**
- * head.js — Injeksi elemen <head> yang sama di semua halaman.
- * Dipanggil tanpa defer agar berjalan sebelum style.css diproses.
- * Font & favicon cukup didefinisikan di SATU tempat (file ini saja),
- * dipakai oleh SEMUA halaman — tanpa pengulangan di HTML.
+ * head.js — Injeksi elemen <head> yang sama di semua halaman (tanpa defer,
+ * berjalan sebelum CSS diproses). Font & favicon cukup di SATU tempat.
  */
 (function () {
   const h = document.head;
 
-  // Keamanan: tidak sampa path halaman ke situs luar (Google Fonts, wa.me, dst.)
-  // supaya informasi navigasi/internal tidak tampil di network public (Referer).
+  // No-referrer: jangan bocorkan path halaman ke situs luar.
   const referrer = document.createElement("meta");
   referrer.name = "referrer";
   referrer.content = "no-referrer";
   h.appendChild(referrer);
 
-  // Webfonts SELF-HOSTED (assets/fonts, latin subset) — preload supaya
-  // font jadi secepat mungkin + no flash berantakan (FOUT). Tidak lagi
-  // depend Google Fonts / gstatic (1 roundtrip kurang, nol referrer leak
-  // ke situs luar). Regras @font-face di assets/css/style.css.
+  // Font self-hosted (assets/fonts) — preload biar cepat & tanpa FOUT.
   [
     { href: "/assets/fonts/inter-latin.woff2" },
     { href: "/assets/fonts/bebas-latin.woff2" },
@@ -33,9 +27,7 @@
     h.appendChild(l);
   });
 
-  // Favicons — injection via JS supaya hanya 1 tempat simpan (DRY).
-  // ?v= cache-busting: browser caches favicon per-origin sangat intens;
-  // URL versiyon baru biar re-fetch, jadi cukup update VCACHE di sini saja.
+  // Favicon — 1 tempat simpan. ?v= cache-buster: naikkan VCACHE saat rilis.
   const VCACHE = "20260923-1";
   [
     { rel: "icon", type: "image/png", href: `/assets/favicon/favicon-96x96.png?v=${VCACHE}`, sizes: "96x96" },

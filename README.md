@@ -1,356 +1,296 @@
 # 🏀 Sistem Presensi — Bhakti Sebatung Academy
 
-> ## 📢 Backend menggunakan Supabase
-> Proyek ini menggunakan **Supabase (Postgres + Edge Function)** sebagai backend.
-> Setup dari nol ada di **[`MIGRASI_SUPABASE.md`](./MIGRASI_SUPABASE.md)**.
-> Backend lama Google Apps Script + Google Sheets sudah **dipensiunkan dan
-> dihapus** dari repo (riwayat lengkap tetap ada di git).
-
 Web presensi latihan basket berbasis **scan kode QR**, dibangun dengan HTML/CSS/JavaScript
-native (tanpa framework) + **Supabase** (Postgres + Edge Function) sebagai backend.
+native (tanpa framework) + **Supabase** (Postgres + Edge Function) sebagai backend utama,
+dan **Google Apps Script + Spreadsheet** khusus untuk fitur Monitoring & Evaluasi.
 Cocok dihosting gratis di **GitHub Pages**.
 
 ### ✨ Pembaruan Terbaru
 
-- **Optimasi free tier** — riwayat presensi memakai pagination (500 baris/halaman),
-  dashboard menghitung agregat iuran langsung di database (tanpa menarik seluruh baris),
-  index tambahan untuk scan barcode, dan cache `localStorage` untuk data statis
-  (daftar kelompok/siswa) dengan invalidasi otomatis saat login/logout/mutasi.
-- **Fitur baru: Iuran Bulanan** — catat status bayar iuran latihan tiap siswa per
-  bulan (Lunas/Belum Bayar), lengkap dengan riwayat pembayaran & ringkasan di
-  Dashboard. Lihat menu **Iuran** di navigasi.
-- **URL bersih tanpa `.html`** — semua halaman kini diakses tanpa akhiran `.html`
-  (mis. `/dashboard/`, `/iuran/`) untuk tampilan yang lebih rapi & profesional.
-- **Desain dirombak total** — gaya "Bold Court": warna flat, garis outline tegas,
-  bayangan solid (bukan gradient/soft-shadow generik), navigasi berubah dari sidebar
-  jadi **top bar (desktop) + bottom tab bar dengan tombol Scan menonjol (mobile)**.
-  Sudah responsif penuh dari HP kecil sampai layar desktop.
-- **Kode barcode 1D diganti kode QR (2D)** — lebih mudah dipindai kamera HP dari
-  berbagai sudut/jarak dibanding barcode garis-garis biasa.
-- **Loading lebih terasa cepat** — font dimuat lebih optimal, semua script pakai
-  `defer`, dan tampilan memakai _skeleton shimmer_ per bagian (bukan layar putih
-  penuh) selagi menunggu respons backend.
+- **Kolom Jenis Kelamin** — tabel Monitoring & Evaluasi menampilkan **Jenis Kelamin**
+  (bukan Kelompok), diambil langsung dari Supabase (`siswa.jenis_kelamin`). Kolom
+  Kelompok tetap tersimpan di data & sheet GAS sebagai snapshot riwayat.
+- **Menu desktop 2 baris** — header (≥1200px) menampilkan brand + user di baris satu,
+  seluruh menu di baris kedua full-width (auto wrap) — tidak pernah berdesakan walau
+  menu bertambah. Mobile (drawer + bottom tab) tetap seperti sebelumnya.
+- **Header solid** — background topbar/drawer kini warna solid (sebelumnya alpha 98%
+  yang terlihat transparan saat konten scroll di belakangnya).
+- **Pagination reusable** — satu modul `assets/js/core/pager.js` dipakai semua halaman
+  bertabel (Siswa, Iuran, Pelatih, Presensi, Presensi Pelatih). Dua mode: client-side
+  slice & server-side offset/limit. Riwayat Presensi default **50 data/halaman**.
+- **Optimasi backend Monitoring (GAS)** — action gabungan `getRekapEvaluasiBulanan`
+  (1 round-trip, dulu 2), tulis batch `setValues` tunggal (dulu 2–3 panggilan sheet),
+  cache server 60s (tulis selalu invalidate), lock timeout 5s, load siswa+penilaian
+  paralel di frontend.
+- **Optimasi free tier** — riwayat presensi memakai pagination, dashboard menghitung
+  agregat iuran langsung di database, index untuk scan barcode, dan cache `localStorage`.
+- **Fitur: Iuran Bulanan** — catat status bayar iuran per siswa per bulan (Lunas/Belum
+  Bayar) lengkap riwayat & ringkasan di Dashboard.
+- **URL bersih tanpa `.html`** — semua halaman diakses tanpa akhiran `.html`.
+- **Desain "Bold Court"** — warna flat, garis outline tegas, bayangan solid; navigasi
+  top bar (desktop) + bottom tab bar dengan tombol Scan menonjol (mobile).
+- **Kode QR (2D)** — menggantikan barcode 1D, lebih mudah dipindai dari berbagai sudut.
+- **Loading cepat** — script `defer`, skeleton shimmer per bagian, font dioptimalkan.
 
 ---
 
 ## 📁 Struktur Proyek
 
-> ℹ️ **URL bersih (tanpa `.html`)**: setiap halaman kecuali `index.html` di root
-> disimpan sebagai `nama-folder/index.html`, sehingga otomatis bisa diakses tanpa
-> ekstensi (mis. `dashboard/` bukan `dashboard.html`). Semua path asset memakai
-> path absolut (diawali `/`) supaya tetap berfungsi walau halaman dipindah ke
-> subfolder. Kalau menambah halaman baru, ikuti pola yang sama: buat folder baru
-> berisi `index.html`, dan pakai `/assets/...` untuk semua `src`/`href`.
+> **URL bersih (tanpa `.html`)**: setiap halaman kecuali `index.html` di root disimpan
+> sebagai `nama-folder/index.html` sehingga bisa diakses tanpa ekstensi (mis.
+> `/dashboard/`). Semua path asset absolut (diawali `/`).
 
 ```
 bhakti-basketball-attendance/
-├── index.html              # Halaman login admin (diakses di "/")
-├── dashboard/index.html    # Ringkasan & statistik kehadiran (diakses di "/dashboard/")
-├── siswa/index.html        # CRUD data siswa (diakses di "/siswa/")
-├── scan/index.html         # Scan presensi (alat scanner / kamera HP) — kode QR (diakses di "/scan/")
-├── presensi/index.html     # Riwayat & rekap presensi (diakses di "/presensi/")
-├── iuran/index.html        # CRUD status bayar iuran bulanan (diakses di "/iuran/")
-├── cetak-barcode/index.html # Cetak kartu kode QR siswa (diakses di "/cetak-barcode/")
-├── maintenance.html        # Halaman pemeliharaan (opsional, tetap di root)
+├── index.html                # Halaman login admin (diakses di "/")
+├── dashboard/index.html      # Ringkasan & statistik kehadiran
+├── siswa/index.html          # CRUD data siswa
+├── scan/index.html           # Scan presensi (scanner / kamera) — kode QR
+├── presensi/index.html       # Riwayat & rekap presensi (default 50/halaman)
+├── iuran/index.html          # CRUD status bayar iuran bulanan
+├── cetak-barcode/index.html  # Cetak kartu kode QR siswa
+├── monitoring/index.html     # Penilaian skill per sesi latihan
+├── evaluasi/index.html       # Evaluasi bulanan per siswa
+├── pelatih/index.html        # CRUD data pelatih
+├── presensi-pelatih/index.html # Riwayat presensi pelatih
+├── qr-pelatih/index.html     # Kode QR login pelatih
+├── maintenance.html          # Halaman pemeliharaan (opsional)
+├── gas-backend/
+│   ├── Code.gs               # Source Apps Script (tempel ke GAS saat setup)
+│   └── Sistem_Monitoring_Latihan_Basket.xlsx  # Template spreadsheet GAS
 ├── supabase/
-│   ├── schema.sql          # MASTER skema: tabel, RLS, & seluruh fungsi rpc_ (logic backend)
-│   ├── hardening.sql       # DELTA keamanan: bcrypt, token hash, anti brute-force IP
+│   ├── schema.sql            # MASTER skema: tabel, RLS, seluruh fungsi rpc_
+│   ├── hardening.sql         # DELTA keamanan: bcrypt, token hash, anti brute-force IP
 │   ├── backdate_presensi.sql # DELTA: scan telat / latihan hari lama (p_tanggal)
-│   ├── import_siswa_pendataan.sql ⚠️ PII — diuntrack, JANGAN commit (lihat 🔐)
-│   ├── config.toml         # Konfigurasi project Supabase (CLI)
-│   └── functions/api/      # Edge Function router tipis (memanggil rpc_* sesuai action)
+│   ├── pelatih.sql / pelatih_google.sql / pelatih_verifikasi.sql / public_access.sql
+│   ├── config.toml           # Konfigurasi project Supabase (CLI)
+│   └── functions/api/        # Edge Function router tipis (memanggil rpc_* sesuai action)
 └── assets/
-    ├── css/
-    │   └── style.css       # Semua styling (design system "Bold Court")
-    ├── favicon/            # Icon website & Web Manifest
-    ├── img/                # Asset gambar (logo, foto academy)
+    ├── css/style.css         # Semua styling (design system "Bold Court")
+    ├── favicon/              # Icon website & Web Manifest
+    ├── img/                  # Asset gambar (logo, foto academy)
     └── js/
-        ├── core/           # Pondasi aplikasi (konfigurasi, auth, API, UI, head injector)
-        │   ├── head.js     # Injeksi favicon & Google Fonts terpusat
-        │   ├── config.js   # ⚠️ Kredensial Supabase obfuscate (lihat catatan 🔐)
-        │   ├── api.js      # Wrapper komunikasi ke Edge Function (+ cache data statis)
-        │   ├── auth.js     # Sesi login & guard halaman
-        │   └── ui.js       # Komponen bersama (nav atas/bawah, toast, modal, skeleton loader)
-        ├── pages/          # Logika per halaman
-        │   ├── login.js
-        │   ├── dashboard.js
-        │   ├── siswa.js
-        │   ├── scan.js
-        │   ├── presensi.js
-        │   ├── iuran.js
-        │   └── cetak-barcode.js
-        └── vendor/         # Library pihak ketiga di-bundle lokal (tanpa CDN)
-            ├── qrcode.min.js
-            └── html5-qrcode.min.js
-└── README.md               # Dokumen ini
+        ├── core/             # Pondasi aplikasi
+        │   ├── head.js       # Injeksi favicon & Google Fonts terpusat
+        │   ├── config.js     # ⚠️ Kredensial Supabase & GAS (lihat Setup)
+        │   ├── api.js        # Wrapper ke Edge Function Supabase (+ cache statis)
+        │   ├── api-gas.js    # Wrapper ke Google Apps Script (monitoring/evaluasi)
+        │   ├── auth.js       # Sesi login & guard halaman
+        │   ├── ui.js         # Komponen bersama (nav, toast, modal, skeleton)
+        │   └── pager.js      # Pagination reusable (client & server mode)
+        ├── pages/            # Logika per halaman
+        └── vendor/           # qrcode.min.js & html5-qrcode.min.js (bundle lokal)
 ```
 
 ---
 
 ## 🚀 Instalasi
 
-Ikuti **[`MIGRASI_SUPABASE.md`](./MIGRASI_SUPABASE.md)** untuk setup lengkap dari nol:
-1. Buat project Supabase.
-2. Jalankan `supabase/schema.sql` di SQL Editor.
-3. Jalankan `supabase/hardening.sql` di SQL Editor (hardening keamanan).
-4. Deploy Edge Function `api` (`supabase functions deploy api --no-verify-jwt`).
-5. Set secret origin domain: `supabase secrets set ALLOWED_ORIGIN=https://bhaktisebatung.web.id`.
-6. Set kredensial di `assets/js/core/config.js` (nilai diobfuscate, lihat di bawah).
+### A. Backend Supabase (presensi, siswa, iuran, dll)
+
+1. Buat project di [supabase.com](https://supabase.com).
+2. Buka **SQL Editor**, jalankan `supabase/schema.sql`.
+3. Jalankan `supabase/hardening.sql`, lalu `supabase/backdate_presensi.sql`
+   (urutan wajib: **schema → hardening → backdate**). Skema delta lain
+   (`pelatih*.sql`, `public_access.sql`) sesuai fitur yang dipakai.
+4. Deploy Edge Function: `supabase functions deploy api --no-verify-jwt`.
+5. Set secret origin: `supabase secrets set ALLOWED_ORIGIN=https://namadomain.web.id`.
+6. Isi kredensial di `assets/js/core/config.js` (nilai diobfuscate — baca bagian
+   "Ganti kredensial Supabase" di bawah).
 7. Deploy ke GitHub Pages.
 
-- **Username**: `admin`
-- **Password default** (seed di `schema.sql`): `Bsacademy135*` → ⚠️ **segera ganti** (lihat `MIGRASI_SUPABASE.md` bagian "Uji coba").
+- **Username**: `admin` · **Password default** (seed di `schema.sql`):
+  `Bsacademy135*` → ⚠️ **segera ganti**:
+  ```sql
+  select reset_admin('admin', 'password-baru-kamu');
+  ```
+
+### B. Backend Monitoring & Evaluasi (Google Apps Script)
+
+Fitur Monitoring & Evaluasi **terpisah total dari Supabase** — datanya di Google
+Spreadsheet, dipanggil lewat Web App GAS. Template spreadsheet siap pakai:
+`gas-backend/Sistem_Monitoring_Latihan_Basket.xlsx` (2 sheet: `Penilaian` 17 kolom,
+`Evaluasi` 11 kolom — struktur persis kontrak `Code.gs`).
+
+1. Upload `.xlsx` ke Google Drive, buka dengan Google Sheets (auto-convert).
+2. **Extensions → Apps Script** → hapus isi `Code.gs` default → tempel seluruh isi
+   `gas-backend/Code.gs`.
+3. **Project Settings → Script Properties → Add**: property `APP_KEY`, value string
+   rahasia acak (24+ karakter).
+4. **Deploy → New deployment → Web app**: Execute as `Me`, Who has access `Anyone`.
+   Salin Web app URL.
+5. Di `assets/js/core/config.js` isi:
+   ```js
+   GAS_URL: "https://script.google.com/macros/s/XXXXX/exec", // URL dari langkah 4
+   GAS_KEY: "kunci-yang-sama-persis-dengan-APP_KEY",
+   ```
+6. Setiap ubah kode `Code.gs` → **New deployment** ulang (Apps Script tidak
+   auto-update deployment lama).
+
+> ⚠️ `GAS_KEY`/`APP_KEY` wajib **sama persis** (huruf besar/kecil & spasi
+> berpengaruh) — beda → error `Tidak diotorisasi`.
 
 ---
 
 ## 🖥️ Cara Pakai
 
 ### Dashboard
-
-Ringkasan jumlah siswa aktif, hadir/telat hari ini, grafik tren 7 hari, dan daftar
-siswa yang sudah scan hari ini. Statistik iuran bulan ini (lunas/belum/terkumpul)
-dihitung langsung di database — dashboard tidak menarik seluruh baris iuran.
+Ringkasan jumlah siswa aktif, hadir/telat hari ini, grafik tren 7 hari, daftar siswa
+yang sudah scan, dan statistik iuran bulan ini.
 
 ### Data Siswa
-
-Tambah, edit, dan hapus data siswa. **Kode QR dibuat otomatis** (kode unik format
-`BSA-0001`, `BSA-0002`, dst. yang di-encode jadi QR) begitu siswa baru disimpan —
-tidak perlu diisi manual.
+Tambah/edit/hapus siswa. **Kode QR dibuat otomatis** (kode `BSA-0001`, `BSA-0002`, dst).
 
 ### Scan Presensi
+Dua mode: **Alat Scanner/Manual** (input selalu fokus) atau **Kamera HP**
+(`html5-qrcode`). Sistem menentukan **Hadir/Telat** dari tabel `jadwal`, duplikat
+per hari diblokir (constraint `UNIQUE(siswa_id, tanggal)`).
 
-Ada dua mode, bisa dipilih sesuai alat yang tersedia di lapangan:
-
-- **Alat Scanner / Manual** — Kolom input akan selalu fokus. Cocok dipakai dengan
-  alat _scanner_ fisik 2D/QR (USB/Bluetooth) yang berperilaku seperti keyboard, atau
-  untuk mengetik kode secara manual lalu tekan Enter.
-- **Kamera HP** — Memakai kamera perangkat (laptop/HP/tablet) untuk memindai kode QR
-  langsung, memakai library open-source `html5-qrcode` (dibatasi hanya mendeteksi
-  format QR supaya proses pemindaian lebih cepat & akurat).
-
-Sistem otomatis menentukan **Hadir** atau **Telat** berdasarkan jadwal di tabel
-`jadwal`, dan mencegah siswa yang sama tercatat dua kali di hari yang sama
-(constraint `UNIQUE(siswa_id, tanggal)` di database).
-
-**Backdate (scan telat / latihan hari lama)** — kolom **"Tanggal latihan"** di
-halaman Scan (default: hari ini). Admin bisa ganti ke tanggal latihan sebelumnya
-(maks 7 hari, diatur `scan_backdate_max_days` di `app_config()`), lalu scan kode
-QR — presensi dicatat di **tanggal latihan yang benar**, status Hadir/Telat sesuai
-jadwal **hari latihan tersebut** (bukan hari scan), dan `keterangan` dicatat
-`Backdate` untuk audit. Duplikat tetap diblock. Tanggal di masa depan di-kick.
+**Backdate** — kolom "Tanggal latihan" (maks 7 hari, `scan_backdate_max_days` di
+`app_config()`): scan bisa dicatat ke tanggal latihan lama, status sesuai jadwal hari
+itu, keterangan `Backdate` untuk audit.
 
 ### Riwayat Presensi
+Filter rentang tanggal/kelompok/status, pagination default **50 data/halaman**,
+bisa diunduh sebagai laporan HTML mandiri.
 
-Filter berdasarkan rentang tanggal, kelompok, dan status, serta bisa diunduh
-sebagai laporan HTML mandiri. Tabel menampilkan **500 data per halaman** dengan
-tombol sebelumnya/berikutnya (pagination); ekspor laporan selalu mengambil dataset
-lengkap sesuai filter sehingga laporan tidak terpotong. File laporan tetap memiliki
-pencarian, filter, pengurutan, dan tombol cetak tanpa memuat asset aplikasi.
+### Monitoring Latihan
+Penilaian skill 1–5 per sesi (Dribbling, Lay Up, Shooting, Passing, Footwork,
+Fundamental Team, Team Work, Game/Situasional) + catatan. Admin **dan** Pelatih bisa
+input. Tabel menampilkan **Jenis Kelamin** siswa (dari Supabase).
 
-### Cetak Kode QR
-
-Pilih siswa (bisa banyak sekaligus), lalu cetak kartu berbentuk _player ticket
-card_ berisi kode QR untuk dibagikan dan ditempel/dilaminating oleh siswa.
+### Evaluasi Bulanan
+Khusus **Admin** — rata-rata tiap kategori dari seluruh sesi bulan itu + evaluasi
+naratif (Kelebihan/Kekurangan/Rekomendasi), 1 kali per anak per bulan. Tabel
+menampilkan **Jenis Kelamin** (di-join dari Supabase).
 
 ### Iuran Bulanan
+Pilih Bulan/Tahun → status seluruh siswa aktif otomatis **Belum Bayar** sampai
+ditandai Lunas. Edit/batalkan lewat ikon. Ringkasan tampil di Dashboard.
 
-Pantau & catat status bayar iuran latihan tiap siswa, per bulan:
-
-- Pilih **Bulan** & **Tahun** di bagian atas untuk melihat status seluruh siswa
-  aktif pada periode tersebut. Siswa yang belum punya catatan pembayaran otomatis
-  tampil sebagai **Belum Bayar** — tidak perlu di-generate manual di muka.
-- Klik **Tandai Lunas** untuk mencatat pembayaran (nominal, tanggal bayar,
-  keterangan opsional). Nominal default diatur di fungsi `app_config()` pada
-  `supabase/schema.sql`.
-- Sudah tercatat Lunas tapi salah input? Klik ikon **Edit** untuk mengoreksi, atau
-  ikon **Hapus** untuk membatalkan (siswa kembali berstatus Belum Bayar).
-- Ikon **Riwayat** menampilkan histori pembayaran siswa tsb di semua bulan.
-- Ringkasan **Lunas / Belum Bayar / Total Terkumpul** bulan berjalan juga tampil
-  otomatis di **Dashboard**.
+### Cetak Kode QR
+Pilih siswa (bisa banyak), cetak kartu *player ticket card* berisi QR.
 
 ---
 
-## 🗂️ Struktur Data (Supabase)
+## 🗂️ Struktur Data
 
-Skema lengkap & semua fungsi backend ada di `supabase/schema.sql`. Frontend **tidak
-boleh** membaca tabel langsung — semua akses lewat Edge Function yang memanggil
-fungsi `rpc_*` (akses tabel hanya untuk `service_role`).
+Semua akses frontend lewat Edge Function yang memanggil fungsi `rpc_*`
+(tabel hanya bisa diakses `service_role`).
 
 | Tabel | Kolom utama |
 |---|---|
 | `admin` | username, password_hash, nama, role, status |
-| `siswa` | id, barcode, nama, jenis_kelamin, tanggal_lahir, kelompok, nama_ortu, hp_ortu, tanggal_daftar, status |
+| `siswa` | id, barcode, nama, **jenis_kelamin**, tanggal_lahir, kelompok, nama_ortu, hp_ortu, tanggal_daftar, status |
 | `presensi` | id, siswa_id, barcode, nama, kelompok, waktu, tanggal, status, keterangan |
 | `jadwal` | kelompok, hari, jam_mulai, jam_selesai, toleransi_menit |
 | `iuran` | id, siswa_id, bulan, tahun, nominal, status, tanggal_bayar, keterangan, dicatat_oleh |
 | `sessions` | token, username, nama, role, exp |
 | `login_attempts` | username_key, count, window_start, locked_until |
 
-**Mengatur jadwal & toleransi telat**: tambahkan satu baris di tabel `jadwal` untuk
-setiap kombinasi kelompok + hari latihan. Jika kombinasi tersebut tidak ditemukan,
-siswa yang scan pada hari itu otomatis berstatus **Hadir** (tanpa pengecekan telat).
+> `iuran`: TIDAK ADA baris = **Belum Bayar**. Baris dibuat sistem saat admin menandai
+> Lunas.
 
-> ℹ️ **Cara kerja tabel `iuran`**: TIDAK ADA baris untuk kombinasi siswa + bulan +
-> tahun tertentu berarti **Belum Bayar**. Baris baru hanya dibuat sistem saat admin
-> menandai "Lunas" lewat halaman web — tidak perlu di-generate di muka untuk tiap
-> siswa × tiap bulan.
+> `monitoring` & `evaluasi` TIDAK ada di Supabase — hidup di Google Spreadsheet
+> (sheet `Penilaian` & `Evaluasi`), snapshot nama/kelompok saat diisi.
 
-> ℹ️ **Kenapa kolom `presensi.barcode` / `siswa.barcode` namanya "barcode"?**
-> Secara teknis, kode QR hanyalah tampilan dari kode teks yang sama (mis.
-> `BSA-0001`) — bedanya cuma bentuk gambarnya (kotak 2D, bukan garis-garis 1D).
-> Nama kolom sengaja dibiarkan `barcode` untuk kesinambungan dengan skema lama.
+---
+
+## 🧩 Arsitektur & Maintenance
+
+- **Pagination**: satu modul `assets/js/core/pager.js`. Halaman baru yang butuh
+  pagination tinggal `Pager.create({...}).bind()` lalu `pager.slice(filtered)`
+  (client) atau `pager.setTotal(total)` (server). Jangan copy-paste logic pagination.
+- **Backend monitoring** (`gas-backend/Code.gs`): kontrak `POST { action, key, payload }`
+  → `{ ok, data }`. Data penilaian/evaluasi hanya di spreadsheet; daftar siswa &
+  kelompok tetap dari Supabase (read-only).
+- Logika khusus halaman di `assets/js/pages/`; urutan script
+  `config → api → auth → ui → (pager jika perlu) → script halaman`, semua `defer`,
+  `head.js` tanpa `defer`.
+- Backend logic utama hidup di **Postgres** (`rpc_*` di `supabase/schema.sql`);
+  Edge Function hanya router. Kontrak: `POST { action, token, payload }` →
+  `{ ok, data }`.
+- Asset pakai penanda rilis `?v=...` — saat deploy perubahan, naikkan penanda pada
+  setiap referensi asset yang berubah.
 
 ---
 
 ## 🔧 Troubleshooting
 
-- **`SUPABASE_URL belum diatur`** → nilai kredensial di `config.js` tidak valid / kosong. Re-obfuscate kredensial project kamu (baca catatan 🔐 "Ganti kredensial").
-- **Backdate tidak berfungsi / "p_tanggal tidak dikenali"** → `rpc_scan_presensi` di-reset ke versi lama (mis. setelah re-run `schema.sql`). Re-run `supabase/backdate_presensi.sql` (dan `supabase/hardening.sql` kalau baru) — **urutan wajib: `schema.sql` → `hardening.sql` → `backdate_presensi.sql`**.
-- **"Respon server tidak valid"** → pastikan Edge Function sudah dideploy dan CORS
-  mengizinkan domain situsmu.
-- **Data tidak tampil / "Sesi berakhir"** → Edge Function harus di-deploy dengan
-  `--no-verify-jwt` dan token sesi valid (login ulang).
-- **Kamera tidak bisa dibuka** → pastikan situs diakses lewat **HTTPS** (GitHub Pages
-  sudah HTTPS) dan izin kamera browser diaktifkan.
-- **Kode QR susah terbaca kamera** → pastikan pencahayaan cukup, kartu tidak kusut/silau
-  terkena cahaya, dan jarak kamera sekitar 10–20 cm dari kartu.
-- **"Library QR Code gagal dimuat"** → pastikan folder `assets/js/vendor/` ikut
-  ter-upload ke GitHub Pages (bisa dicek lewat `https://username.github.io/nama-repo/assets/js/vendor/qrcode.min.js`).
-- **Perubahan di `schema.sql` tidak muncul** → jalankan ulang file SQL di SQL Editor
-  (semua `create or replace` / `create ... if not exists` aman dijalankan ulang),
-  lalu redeploy Edge Function.
+- **`SUPABASE_URL belum diatur`** → kredensial di `config.js` kosong/tidak valid
+  (re-obfuscate, lihat "Ganti kredensial").
+- **`GAS_URL belum diatur`** → isi `GAS_URL` di `config.js` (Setup bagian B).
+- **`Tidak diotorisasi` (GAS)** → `GAS_KEY` di config.js tidak sama persis dengan
+  `APP_KEY` di Script Properties.
+- **`APP_KEY belum diatur`** → Script Properties belum terisi / salah project /
+  nama property bukan `APP_KEY`.
+- **`Sheet Penilaian tidak ditemukan`** → nama tab spreadsheet harus persis `Penilaian`
+  dan `Evaluasi`.
+- **Backdate tidak berfungsi / `p_tanggal tidak dikenali`** → re-run
+  `schema.sql → hardening.sql → backdate_presensi.sql` (urutan wajib), lalu redeploy
+  Edge Function.
+- **"Respon server tidak valid"** → Edge Function belum dideploy / CORS origin belum
+  diizinkan.
+- **Kamera tidak terbuka** → situs harus HTTPS + izin kamera browser aktif.
+- **Header tampak transparan / CSS lama** → hard refresh (`Ctrl+Shift+R`), marker
+  asset `?v=` harus naik.
+- **Perubahan SQL tidak muncul** → jalankan ulang file SQL (semua `create or replace`
+  aman), redeploy Edge Function.
 
 ---
 
-## 🧰 Teknologi & Pustaka
+## 🔐 Keamanan
 
-- HTML, CSS, JavaScript native (tanpa build tool/framework)
-- **Supabase**: Postgres + RLS + fungsi `rpc_*` (backend & database) + Edge Function
-- [html5-qrcode](https://github.com/mebjas/html5-qrcode) — pemindaian kode QR via kamera
-- [qrcode](https://github.com/soldair/node-qrcode) — pembuatan gambar kode QR
-
-Kedua library QR **di-bundle langsung** di `assets/js/vendor/` (bukan dimuat dari
-CDN luar) — supaya fitur scan & cetak kode QR tetap berfungsi normal walau koneksi
-ke CDN pihak ketiga sedang diblokir/bermasalah di jaringan tertentu.
-
-- Font: Bebas Neue, Inter, Space Mono (Google Fonts, dimuat via `<link preconnect>` untuk kecepatan)
-
----
-
-## ✅ Optimasi Free Tier Supabase
-
-Untuk data ±100+ siswa & presensi harian, kuota free tier tidak masalah bila pola
-berikut dipertahankan:
-
-- **Storage (500 MB)**: presensi tumbuh ±1.200 baris/bulan (±4 MB/tahun) → aman
-  puluhan tahun. Tidak perlu arsip/hapus otomatis.
-
-  > **Estimasi aktual 80 siswa × 4 latihan/seminggu**: 320 scan/seminggu →
-  > **±1.280 baris/bulan** → ±16.600 baris/tahun → **±2,5 MB/tahun** storage.
-  > Cuma ±0,5% dari kuota 500 MB per tahun. Edge Function untuk scan ±1.300
-  > invoke/bulan (+ ~5–10K untuk halaman admin) vs kuota **500K/bulan** → baik
-  > margin kuota aman.
-- **Edge Function (±500K invoke/bulan)**: pemakaian riil < 5K/bulan (halaman admin +
-  scan). Data statis (kelompok/siswa) di-*cache* `localStorage` (TTL 5-10 menit)
-  di `assets/js/core/api.js` sehingga membuka halaman berulang tidak membakar kuota.
-- **Query besar**: riwayat presensi memakai pagination (500/halaman) + hitung total
-  terpisah; dashboard menghitung iuran via `count`/`sum` agregat tanpa mengirim
-  seluruh baris; scan barcode memakai index `lower(barcode)`.
-- **Bandwidth**: payload tetap kecil karena agregasi dilakukan di database.
-
-Pagination saat ini berbasis offset (sederhana, cukup untuk < 100rb baris). Ganti
-ke keyset pagination (`WHERE (tanggal, waktu) < (?, ?)`) jika data melebihi itu.
-
----
-
-## Maintenance
-
-- Pertahankan logika khusus halaman di `assets/js/pages/`. Markup pilihan select
-  dan status tombol simpan yang dipakai beberapa halaman tersedia di `UI`.
-- Pertahankan urutan script `config`, `api`, `auth`, `ui`, lalu script halaman
-  dengan `defer`. API membaca sesi melalui `Auth` ketika request dijalankan.
-  `head.js` tetap tanpa `defer`.
-- URL asset aplikasi memakai penanda rilis `?v=...` untuk menghindari cache versi
-  lama. Saat merilis perubahan, naikkan penanda pada setiap referensi asset yang
-  berubah. Deploy HTML dan seluruh file terkait bersama-sama.
-- Backend logic hidup di **Postgres** (`supabase/schema.sql`, fungsi `rpc_*`);
-  Edge Function `supabase/functions/api/index.ts` hanya router (tidak ada logic
-  bisnis di sana). Frontend memakai kontrak `POST { action, token, payload }` →
-  `{ ok, data }`.
-- Aturan bisnis berada di fungsi `rpc_*` terkait: jangan menyatukan aturan yang
-  hanya terlihat mirip (filter siswa dan iuran, default status, zona waktu dari
-  `app_config()->>'timezone'`, dan penentuan duplikat presensi).
-
----
-
-## 🔐 Catatan Keamanan
-
-**Kenapa endpoint API tetap terlihat di Inspect Element/Network tab?**
-Proyek ini 100% client-side (GitHub Pages static — tanpa server). Karena itu
-endpoint & kunci anon **tidak bisa fisikal dihapus** dari tampilan browser:
-browser harus tahu URL supaya bisa fetch. Yang aman adalah **pemakaian tidak
-berguna tanpa otorisasi** — bukan kerahasiaan string.
-
-Layer proteksi yang diaktifkan (versi hardening, = `supabase/hardening.sql`
-+ Edge Function versi hardened):
+Proyek 100% client-side — endpoint & kunci anon **tidak bisa disembunyikan** dari
+browser; keamanan ada di **pemakaian yang tidak berguna tanpa otorisasi**.
 
 | Layer | Mekanisme |
 |---|---|
-| 1. Struktur akses | RLS aktif tanpa policy di semua tabel; hanya `service_role` bisa akses; semua jalan lewat Edge Function |
-| 2. Autentikasi sesi | Token kustom (UUID) wajib per request, diverifikasi `rpc_verify_token`; expire 12 jam |
-| 3. Token at rest | Token sesi **disimpan sebagai SHA-256 hash** — dump database tidak leak token valid |
-| 4. Password at rest | **bcrypt (cost 11)**; hash SHA-256 peppered lama auto-upgrade saat login sukses |
-| 5. Brute force user | ≥5 gagal berturut-turut → lock 15 menit (tabel `login_attempts`) |
-| 6. Brute force IP | ≥10 gagal per-IP → lock 15 menit (tabel `login_attempts_ip`, `supabase/hardening.sql`) |
-| 7. Slowing | Delay jitter 350–1200 ms per login gagal + burst limiter memory di Edge Function |
-| 8. Origin allowlist | Edge Function cek `Origin` vs `ALLOWED_ORIGIN` — blok request dari domain lain |
-| 9. Info leak | Fingerprint endpoint diperha; aksi tidak dikenali → pesan generik (no hacecho); token tidak pernah di URL GET (GET sengaja diperha) |
-| 10. Headers | `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, CORS dipepersempit ke origin situs |
-| 11. Konfig frontend | URL/key/function diobfuscate (`config.js`) supaya tidak plaintext dalam source; referrer `no-referrer` di semua halaman |
-| 12. XSS | Semua data dinamis di-render lewat `UI.escapeHtml`, tidak `document.write` |
+| 1. Struktur akses | RLS tanpa policy di semua tabel; hanya `service_role`; semua lewat Edge Function |
+| 2. Sesi | Token kustom (UUID) wajib per request, `rpc_verify_token`, expire 12 jam |
+| 3. Token at rest | Disimpan sebagai SHA-256 hash |
+| 4. Password | bcrypt (cost 11); hash lama auto-upgrade saat login sukses |
+| 5. Brute force | Lock 15 menit per user/IP (tabel `login_attempts*`) |
+| 6. Slowing | Delay jitter + burst limiter di Edge Function |
+| 7. Origin allowlist | Edge Function cek `Origin` vs `ALLOWED_ORIGIN` |
+| 8. Headers | `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, CORS dibatasi |
+| 9. Frontend | Kredensial diobfuscate (`config.js`), `no-referrer`, semua render via `UI.escapeHtml` |
 
-Password default admin **wajib** diganti sesegera (hash lama SHA-256 akan
-auto-upgrade ke bcrypt saat login pertama):
+### 🔑 Ganti kredensial Supabase di config.js (obfuscate)
 
-```sql
-select reset_admin('admin', 'password-baru-kamu');
-```
-
-### 🔑 Ganti kredensial Supabase dalam config.js (obfuscate)
-
-Kredensial di `config.js` tidak diisi plaintext. Untuk ganti project:
-
-1. Buka `assets/js/core/config.js`, dulu nilai taked diobfuscate:
+1. Buka `assets/js/core/config.js`. Decode nilai lama (console browser):
    ```js
-   // decode manual untuk dicek nilai lama (browser console):
    const K = [0xa7, 0x3c, 0xd1, 0x09];
    const d = (s) => { const r = atob(s); let o = ""; for (let i = 0; i < r.length; i++) o += String.fromCharCode(r.charCodeAt(i) ^ K[i % 4]); return o; };
    console.log(d(APP_CONFIG.SUPABASE_URL), d(APP_CONFIG.SUPABASE_ANON_KEY), d(APP_CONFIG.SUPABASE_FUNCTION));
    ```
-2. Ganti nilai di project Supabase, lalu obfuscate nilai baru (alat online
-   base64/xor, key `[0xa7,0x3c,0xd1,0x09]`, muten per byte) dan tempel hasil
-   ke `deobf(...)`.
+2. Obfuscate nilai baru (base64/xor key `[0xa7,0x3c,0xd1,0x09]`, xor per byte),
+   tempel hasil ke `deobf(...)`.
 
 > ⚠️ Obfuscation bukan keamanan riil — kunci anon memang public by design.
-> Proteksi sesungguhnya ada di layer 1–8, bukan di string config.
+> Proteksi sesungguhnya di layer 1–8.
 
 ### 🚫 Purge data siswa dari git (PII)
 
-`supabase/import_siswa_pendataan.sql` berisi PII riil (nama aluno, HP ortu,
-tanggal lahir) dan **belum ini sudah ter-push ke GitHub** (commit `998ee5c`).
-File sudah diuntrack + di-gitignore. Kalau repo **public**, PII sudah terleak —
-wajib **purge riwayat git** supaya tidak bisa dibaca dari history:
+`supabase/import_siswa_pendataan.sql` berisi PII riil dan pernah ter-push ke GitHub
+(commit `998ee5c`) — file sudah diuntrack + di-gitignore. Kalau repo **public**,
+wajib purge riwayat:
 
 ```bash
-# Baca: tidak bisa undelele — backup repo dulu (clone --mirror).
-# Option A: git filter-repo (rekomendasi)
+# Backup dulu: clone --mirror
 git filter-repo --path supabase/import_siswa_pendataan.sql --invert-paths
-# Option B: BFG
-bfg --delete-files import_siswa_pendataan.sql
-# lalu force-push SEMUA branch + tag:
 git push origin --force --all
 ```
 
-Plus deaktivasi GitHub caching (Settings → Pages) dan consider Deactivate /
-re-create repo kalau data sangat sensitif. Data PII yang sudah terleak tidak
-bisa "diuntrack" — kemungkinan besar perlu inform yang tersa.
+Plus deaktivasi GitHub caching (Settings → Pages), pertimbangkan re-create repo
+kalau data sangat sensitif.
+
+---
+
+## 🧰 Teknologi
+
+- HTML, CSS, JavaScript native (tanpa build tool/framework)
+- **Supabase**: Postgres + RLS + `rpc_*` + Edge Function
+- **Google Apps Script** + Spreadsheet: fitur Monitoring & Evaluasi
+- [html5-qrcode](https://github.com/mebjas/html5-qrcode) & [qrcode](https://github.com/soldair/node-qrcode) — di-bundle lokal di `assets/js/vendor/`
+- Font: Bebas Neue, Inter, Space Mono (Google Fonts)

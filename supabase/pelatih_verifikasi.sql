@@ -1,20 +1,11 @@
 -- =============================================================================
--- FEATURE: VERIFIKASI AKUN PELATIH (Google) + QR PELATIH — Bhakti Sebatung Academy
--- File DELTA: jalan di SQL Editor. Aman dijalankan ulang (idempotent).
---
--- Isi:
---   1. pelatih + kolom verifikasi (boolean, default false)
---   2. rpc_get_pelatih_list()  — sertakan email & verifikasi (untuk halaman admin)
---   3. rpc_set_pelatih_verifikasi() — admin tandai/batalkan verifikasi
---   4. rpc_get_pelatih_self() — baca data pelatih login (untuk scan gate + QR sendiri)
---   5. rpc_scan_presensi_pelatih() — gate verifikasi (blokir kalau belum diverifikasi)
---   6. REVOKE akses anon/authenticated (ikut pola schema.sql)
---
--- Pelatih Google belum terverifikasi TIDAK boleh scan presensi siswa — gate
--- dilakukan di Edge Function (scanPresensi) lewat rpc_get_pelatih_self().verifikasi.
---
--- URUTAN WAJIB deploy: schema.sql -> hardening.sql -> backdate_presensi.sql ->
--- pelatih.sql -> pelatih_google.sql -> pelatih_verifikasi.sql.
+-- FEATURE: VERIFIKASI AKUN PELATIH (Google) + QR PELATIH — delta, idempotent.
+-- Isi: kolom verifikasi di pelatih (default false) · rpc_get_pelatih_list
+-- (sertakan email & verifikasi) · rpc_set_pelatih_verifikasi (admin tandai) ·
+-- rpc_get_pelatih_self · rpc_scan_presensi_pelatih (gate verifikasi) · revoke.
+-- Pelatih belum terverifikasi tidak boleh scan presensi siswa (gate di Edge
+-- Function lewat rpc_get_pelatih_self().verifikasi).
+-- URUTAN: ... → pelatih_google.sql → pelatih_verifikasi.sql.
 -- =============================================================================
 
 -- =============================================================================

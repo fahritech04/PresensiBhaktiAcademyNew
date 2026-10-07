@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Monitoring Latihan &middot; Bhakti Sebatung Academy</title>
+    <script src="/assets/js/core/head.js?v=20260923-3"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20261007-2" />
+    <style>
+      .skill-field {
+        margin-bottom: 16px;
+      }
+      .skill-field-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+      .skill-field-head label {
+        font-weight: 700;
+        color: var(--text);
+        font-size: 13px;
+      }
+      .skill-field-head .skill-val {
+        font-family: var(--font-mono, monospace);
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .pill-rating {
+        display: flex;
+        gap: 6px;
+      }
+      .pill-rating button {
+        flex: 1;
+        min-height: 38px;
+        border: 2px solid var(--line);
+        background: var(--surface);
+        border-radius: 10px;
+        font-weight: 800;
+        font-family: var(--font-display);
+        letter-spacing: 0.02em;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: transform 0.1s, background 0.15s, border-color 0.15s, color 0.15s;
+      }
+      .pill-rating button:hover {
+        border-color: var(--orange-active);
+        color: var(--text);
+      }
+      .pill-rating button.active {
+        background: var(--orange-active);
+        border-color: var(--orange-active);
+        color: #1c1204;
+        transform: translateY(-1px);
+      }
+      .rekap-mini {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .rekap-mini b {
+        color: var(--text);
+      }
+      .status-dot {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .status-dot::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--line);
+      }
+      .status-dot.done::before {
+        background: var(--teal);
+      }
+      .status-dot.pending::before {
+        background: var(--red);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div id="topbar-root"></div>
+
+      <main class="view" id="mainContent" tabindex="-1">
+        <div class="view-head" id="viewHead"></div>
+
+        <div class="stats-grid section-gap">
+          <div class="num-tile tone-teal">
+            <div class="label">Sudah Dinilai</div>
+            <div class="num" id="statSudah">&ndash;</div>
+            <div class="foot">Siswa pada tanggal ini</div>
+          </div>
+          <div class="num-tile tone-red">
+            <div class="label">Belum Dinilai</div>
+            <div class="num" id="statBelum">&ndash;</div>
+            <div class="foot">Perlu diisi</div>
+          </div>
+          <div class="num-tile tone-orange">
+            <div class="label">Rata-rata Hari Ini</div>
+            <div class="num" id="statRata">&ndash;</div>
+            <div class="foot">Skala 1&ndash;5, semua kategori</div>
+          </div>
+        </div>
+
+        <div class="card data-card">
+          <div class="card-body">
+            <div class="toolbar filter-toolbar">
+              <div class="field mb-0">
+                <label for="filterTanggal">Tanggal Latihan</label>
+                <input class="input" type="date" id="filterTanggal" />
+              </div>
+              <div class="field mb-0">
+                <label for="filterKelompok">Kelompok</label>
+                <select class="input" id="filterKelompok">
+                  <option value="">Semua</option>
+                </select>
+              </div>
+              <div class="field mb-0">
+                <label for="filterStatus">Status</label>
+                <select class="input" id="filterStatus">
+                  <option value="">Semua</option>
+                  <option value="sudah">Sudah Dinilai</option>
+                  <option value="belum">Belum Dinilai</option>
+                </select>
+              </div>
+              <div class="search-input" style="flex: 1 1 200px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" class="input" id="searchInput" aria-label="Cari nama siswa" placeholder="Cari nama siswa..." />
+              </div>
+            </div>
+          </div>
+          <div class="card-body pad-0">
+            <p class="table-hint no-print">Geser tabel untuk melihat kolom lainnya.</p>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Tabel monitoring latihan siswa">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col">Nama Siswa</th>
+                    <th scope="col">Jenis Kelamin</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Rata-rata</th>
+                    <th scope="col">Catatan Sesi Ini</th>
+                    <th scope="col">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            <div id="emptyState" class="empty-state hidden">
+              <h3 id="emptyTitle">Belum ada siswa aktif</h3>
+              <p id="emptyDesc">Tambahkan siswa dulu di menu Siswa untuk mulai mencatat monitoring latihan.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div id="nav-root"></div>
+    </div>
+
+    <!-- Modal Isi/Edit Penilaian -->
+    <div class="modal-backdrop" id="penilaianModal">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+        <div class="modal-head">
+          <div>
+            <h3 id="modalTitle">Penilaian Latihan</h3>
+            <p class="desc" id="modalDesc"></p>
+          </div>
+          <button type="button" class="modal-close" id="btnCloseModal" aria-label="Tutup formulir penilaian">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <form id="penilaianForm">
+          <div class="modal-body">
+            <input type="hidden" id="fId" />
+            <input type="hidden" id="fSiswaId" />
+            <input type="hidden" id="fNamaSiswa" />
+            <input type="hidden" id="fKelompok" />
+
+            <div id="skillFieldsRoot"></div>
+
+            <div class="field full">
+              <label for="fCatatan">Catatan Perkembangan Sesi Ini</label>
+              <textarea class="input" id="fCatatan" rows="3" placeholder="cth. Sudah mulai berani drive ke ring, masih perlu perbaiki footwork saat lay-up."></textarea>
+            </div>
+          </div>
+          <div class="modal-foot">
+            <button type="button" class="btn btn-ghost" id="btnHapus" style="margin-right: auto; display: none">Hapus</button>
+            <button type="button" class="btn btn-ghost" id="btnBatal">Batal</button>
+            <button type="submit" class="btn btn-primary" id="btnSimpan">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/assets/js/core/config.js?v=20260927-2" defer></script>
+    <script src="/assets/js/core/api.js?v=20260927-1" defer></script>
+    <script src="/assets/js/core/api-gas.js?v=20261007-1" defer></script>
+    <script src="/assets/js/core/auth.js?v=20261007-1" defer></script>
+    <script src="/assets/js/core/ui.js?v=20261007-1" defer></script>
+    <script src="/assets/js/pages/monitoring.js?v=20261007-2" defer></script>
+  </body>
+</html>

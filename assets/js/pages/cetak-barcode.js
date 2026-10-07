@@ -63,7 +63,7 @@
     if (mode === next) return;
     mode = next;
     selected.clear();
-    // Reset pratinjau kartu lama (siswa/pelatih) saat ganti mode.
+    // Reset pratinjau kartu lama saat ganti mode.
     const previewCard = document.getElementById("previewCard");
     const printArea = document.getElementById("print-area");
     if (previewCard) previewCard.style.display = "none";
@@ -73,12 +73,12 @@
     btnSiswa.classList.toggle("btn-ghost", !isSiswa);
     btnPelatih.classList.toggle("btn-primary", !isSiswa);
     btnPelatih.classList.toggle("btn-ghost", isSiswa);
-    // Kolom/filter khusus siswa disembunyikan untuk mode pelatih.
+    // Kolom/filter khusus siswa disembunyikan di mode pelatih.
     filterKelompok.style.display = isSiswa ? "" : "none";
     if (filterJenisKelamin) filterJenisKelamin.style.display = isSiswa ? "" : "none";
     if (thKategori) thKategori.textContent = isSiswa ? "Jenis Kelamin" : "Kategori";
     if (thNama) thNama.textContent = isSiswa ? "Nama Siswa" : "Nama Pelatih";
-    // Cetak massal hanya untuk siswa. Pelatih = download satu-satu.
+    // Cetak massal hanya siswa; pelatih download satu-satu.
     checkAll.style.display = isSiswa ? "" : "none";
     const btnPrint = document.getElementById("btnPrint");
     if (btnPrint) btnPrint.style.display = isSiswa ? "" : "none";
@@ -88,19 +88,10 @@
     await loadData();
   }
 
-  // Urutan tampil & cetak: naik dari BSA-0001 / PLT-0001 (angka barcode dibuat
-  // sequence saat pendaftaran, jadi terbaru selalu di akhir).
-  function compareBarcode(a, b) {
-    const na = Number.parseInt(String(a.barcode || "").replace(/\D+/g, ""), 10);
-    const nb = Number.parseInt(String(b.barcode || "").replace(/\D+/g, ""), 10);
-    if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
-    return String(a.barcode || "").localeCompare(String(b.barcode || ""), "id");
-  }
-
   function getVisibleRows() {
     const q = searchInput.value.trim().toLowerCase();
     if (mode === "pelatih") {
-      return allPelatih.filter((p) => !q || p.nama.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q)).sort(compareBarcode);
+      return allPelatih.filter((p) => !q || p.nama.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q)).sort(UI.compareBarcode);
     }
     const kel = filterKelompok.value;
     const jk = filterJenisKelamin ? filterJenisKelamin.value : "";
@@ -111,7 +102,7 @@
         const matchJk = !jk || s.jenisKelamin === jk;
         return matchQ && matchKel && matchJk;
       })
-      .sort(compareBarcode);
+      .sort(UI.compareBarcode);
   }
 
   function renderTable() {
@@ -170,8 +161,8 @@
   }
 
   async function printSelected() {
-    // Cetak juga mengikuti urutan barcode, mengikuti urutan tabel yang tampil.
-    const list = (mode === "siswa" ? allSiswa : allPelatih).filter((s) => selected.has(s.barcode)).sort(compareBarcode);
+    // Urutan cetak mengikuti urutan barcode (sama dengan tabel).
+    const list = (mode === "siswa" ? allSiswa : allPelatih).filter((s) => selected.has(s.barcode)).sort(UI.compareBarcode);
     if (!list.length) return;
 
     if (typeof QRCode === "undefined") {
@@ -217,7 +208,7 @@
     });
 
     await document.fonts.ready;
-    // Fit long names inside the reserved space without cutting off any text.
+    // Nama panjang: kecilkan font biar tidak terpotong.
     printArea.querySelectorAll(".name").forEach((name) => {
       const text = name.firstElementChild;
       if (text.scrollHeight > name.clientHeight) {

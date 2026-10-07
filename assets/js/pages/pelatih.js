@@ -4,8 +4,6 @@
     <button class="btn btn-primary btn-sm" id="btnTambah">+ Tambah Pelatih</button>`;
 
   let allPelatih = [];
-  let page = 1;
-  let pageSize = 25;
   let filteredCount = 0;
 
   const tableBody = document.getElementById("tableBody");
@@ -14,13 +12,9 @@
   const emptyDesc = document.getElementById("emptyDesc");
   const searchInput = document.getElementById("searchInput");
   const filterStatus = document.getElementById("filterStatus");
-  const paginationBar = document.getElementById("paginationBar");
-  const rowInfo = document.getElementById("rowInfo");
-  const pageSizeSelect = document.getElementById("pageSizeSelect");
-  const btnFirst = document.getElementById("btnFirst");
-  const btnPrev = document.getElementById("btnPrev");
-  const btnNext = document.getElementById("btnNext");
-  const btnLast = document.getElementById("btnLast");
+
+  const pager = Pager.create({ pageSize: 25, itemLabel: "pelatih", onPageChange: renderTable });
+  pager.bind();
   const form = document.getElementById("pelatihForm");
   const modalTitle = document.getElementById("modalTitle");
 
@@ -39,33 +33,11 @@
     form.addEventListener("submit", onSubmit);
     searchInput.addEventListener("input", resetPage);
     filterStatus.addEventListener("change", resetPage);
-    pageSizeSelect.addEventListener("change", () => {
-      pageSize = Number(pageSizeSelect.value) || 25;
-      page = 1;
-      renderTable();
-    });
-    btnFirst.addEventListener("click", () => goToPage(1));
-    btnPrev.addEventListener("click", () => goToPage(page - 1));
-    btnNext.addEventListener("click", () => goToPage(page + 1));
-    btnLast.addEventListener("click", () => goToPage(totalPages()));
   }
 
   function resetPage() {
-    page = 1;
+    pager.reset();
     renderTable();
-  }
-
-  function totalPages() {
-    return Math.max(1, Math.ceil(filteredCount / pageSize));
-  }
-
-  function goToPage(next) {
-    const target = Math.min(Math.max(1, next), totalPages());
-    if (target === page) return;
-    page = target;
-    renderTable();
-    const wrap = document.querySelector(".table-wrap");
-    if (wrap) wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   async function loadData() {
@@ -80,33 +52,8 @@
       filteredCount = 0;
       updateEmptyState();
       emptyState.classList.remove("hidden");
-      updatePager();
+      pager.setTotal(0);
     }
-  }
-
-  // Urutan tampil ascending dari PLT-0001 (barcode dibuat sequence saat
-  // pendaftaran, jadi urutan angka = urutan input, terbaru di akhir).
-  function compareBarcode(a, b) {
-    const na = Number.parseInt(String(a.barcode || "").replace(/\D+/g, ""), 10);
-    const nb = Number.parseInt(String(b.barcode || "").replace(/\D+/g, ""), 10);
-    if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
-    return String(a.barcode || "").localeCompare(String(b.barcode || ""), "id");
-  }
-
-  function updatePager() {
-    const pages = totalPages();
-    if (!filteredCount) {
-      paginationBar.classList.add("hidden");
-      return;
-    }
-    paginationBar.classList.remove("hidden");
-    const from = (page - 1) * pageSize + 1;
-    const to = Math.min(page * pageSize, filteredCount);
-    rowInfo.textContent = `${from}-${to} dari ${filteredCount} pelatih · hal. ${page}/${pages}`;
-    btnFirst.disabled = page === 1;
-    btnPrev.disabled = page === 1;
-    btnNext.disabled = page >= pages;
-    btnLast.disabled = page >= pages;
   }
 
   function updateEmptyState() {
@@ -129,19 +76,15 @@
         const matchStatus = !status || p.status === status;
         return matchQ && matchStatus;
       })
-      .sort(compareBarcode);
+      .sort(UI.compareBarcode);
 
     filteredCount = filtered.length;
-    if (page > totalPages()) page = totalPages();
-
-    const start = (page - 1) * pageSize;
-    const rows = filtered.slice(start, start + pageSize);
+    const rows = pager.slice(filtered);
 
     if (!rows.length) {
       tableBody.innerHTML = "";
       updateEmptyState();
       emptyState.classList.remove("hidden");
-      updatePager();
       return;
     }
     emptyState.classList.add("hidden");
@@ -173,8 +116,6 @@
     tableBody.querySelectorAll("[data-edit]").forEach((btn) => btn.addEventListener("click", () => openForm(allPelatih.find((p) => p.barcode === btn.dataset.edit))));
     tableBody.querySelectorAll("[data-delete]").forEach((btn) => btn.addEventListener("click", () => onDelete(btn.dataset.delete)));
     tableBody.querySelectorAll("[data-verify]").forEach((btn) => btn.addEventListener("click", () => onVerify(btn.dataset.verify, btn.dataset.verified === "0")));
-
-    updatePager();
   }
 
   function openForm(pelatih) {

@@ -1,36 +1,18 @@
 -- =============================================================================
--- MASTER SKEMA SUPABASE LENGKAP & TERBARU — Bhakti Sebatung Academy
--- Versi: Terintegrasi Fitur Jenis Kelamin (Putra & Putri)
+-- MASTER SKEMA SUPABASE — Bhakti Sebatung Academy (fitur Jenis Kelamin terintegrasi)
+-- Isi: config app_config() · tabel (admin, siswa, jadwal, presensi, iuran,
+-- sessions, login_attempts, barcode_seq) · RLS tanpa policy · helper
+-- (hash_password, next_barcode, normalize_hp) · seluruh fungsi rpc_* ·
+-- hak akses service_role saja.
 --
--- File ini adalah SATU-SATUNYA file master SQL yang mencakup seluruh skema database:
---   1. Ekstensi pgcrypto & fungsi konfigurasi app_config()
---   2. Tabel: admin, siswa (dengan kolom jenis_kelamin), jadwal, presensi,
---      iuran, sessions, login_attempts, dan sequence barcode_seq
---   3. Row Level Security (RLS) & pencabutan akses langsung anon/authenticated
---   4. Helper (hash_password, next_barcode, sync_barcode_seq, normalize_hp)
---   5. Seluruh fungsi RPC:
---      - rpc_login, rpc_verify_token, reset_admin
---      - rpc_get_siswa_list (mengembalikan jenisKelamin)
---      - rpc_add_siswa (menerima p_jenis_kelamin & fallback)
---      - rpc_update_siswa (menerima p_jenis_kelamin & fallback)
---      - rpc_delete_siswa (reset barcode_seq otomatis jika siswa terakhir dihapus)
---      - rpc_get_kelompok_list, rpc_scan_presensi
---      - rpc_get_iuran_bulan, rpc_tandai_iuran, rpc_batalkan_iuran, rpc_update_iuran
---      - rpc_get_presensi_list, rpc_get_dashboard_stats
---   6. Pengaturan hak akses (grant execute ke service_role)
---
--- CARA PENGGUNAAN (Jika suatu hari membuat project Supabase baru dari awal):
---   1. Buat project baru di Supabase Dashboard (https://supabase.com/dashboard)
---   2. Buka menu SQL Editor -> New Query
---   3. Salin dan tempel SELURUH isi file ini -> klik Run
---   Database langsung 100% siap dan lengkap dengan fitur jenis kelamin!
+-- Setup project baru: buat project Supabase → SQL Editor → paste seluruh
+-- file ini → Run. Lalu jalankan file delta sesuai urutan di README.
 -- =============================================================================
 
 create extension if not exists pgcrypto;
 
 -- =============================================================================
--- KONFIGURASI — setara object `CONFIG` di code.gs. Edit di SINI SAJA kalau
--- perlu ganti pepper password, nominal iuran default, dsb.
+-- KONFIGURASI — setara object `CONFIG` di code.gs lama. Edit di SINI saja.
 -- =============================================================================
 create or replace function app_config()
 returns jsonb
@@ -45,9 +27,8 @@ as $$
     'password_pepper', 'bsa-2026-kotabaru',   -- boleh diganti, tidak wajib
     'barcode_prefix', 'BSA-',
     'iuran_nominal_default', 50000,
-    -- PENTING: samakan dengan timezone project Apps Script lama kamu
-    -- (dulu: File > Project Settings > Time zone) supaya batas Hadir/Telat
-    -- dan pembagian "hari ini" tetap identik dengan sebelum migrasi.
+-- PENTING: samakan dengan timezone Apps Script lama supaya batas Hadir/Telat
+-- dan pembagian "hari ini" tetap identik.
     'timezone', 'Asia/Jakarta'
   );
 $$;
@@ -99,13 +80,10 @@ create table if not exists jadwal (
   primary key (kelompok, hari)
 );
 
--- Kolom `tanggal` = tanggal kalender (timezone app_config()) saat presensi
--- dicatat. Dipakai untuk constraint UNIQUE "1 siswa hanya 1x presensi/hari"
--- secara atomik (menggantikan cek manual + LockService di code.gs lama).
--- siswa_id boleh NULL & on delete SET NULL (bukan cascade): kalau siswa
--- dihapus, riwayat presensi lamanya TETAP tersimpan (nama/kelompok/waktu
--- sudah didenormalisasi di sini) — sama seperti pesan konfirmasi hapus di
--- siswa.js: "Riwayat presensi lama tetap tersimpan."
+-- Kolom `tanggal` = tanggal kalender (timezone app_config()) saat presensi dicatat,
+-- utk constraint UNIQUE "1 siswa 1x presensi/hari" secara atomik. siswa_id nullable
+-- + ON DELETE SET NULL: hapus siswa → riwayat presensi lama TETAP tersimpan
+-- (nama/kelompok/waktu sudah didenormalisasi).
 create table if not exists presensi (
   id              text primary key,
   siswa_id        text references siswa(id) on delete set null,
@@ -168,11 +146,8 @@ create table if not exists login_attempts (
 create sequence if not exists barcode_seq;
 
 -- =============================================================================
--- KEAMANAN: kunci akses langsung dari klien.
--- Semua akses WAJIB lewat Edge Function (pakai service_role key), persis
--- seperti dulu semua akses ke Spreadsheet WAJIB lewat Web App Apps Script.
--- RLS aktif tanpa policy apa pun -> anon & authenticated ditolak total;
--- hanya service_role yang bisa baca/tulis tabel-tabel ini.
+-- KEAMANAN: semua akses WAJIB lewat Edge Function (service_role). RLS aktif
+-- tanpa policy → anon & authenticated ditolak total.
 -- =============================================================================
 alter table admin          enable row level security;
 alter table siswa          enable row level security;
@@ -904,13 +879,11 @@ end;
 $$;
 
 -- =============================================================================
--- HAK AKSES FUNGSI: hanya service_role (dipakai Edge Function) yang boleh
--- memanggil fungsi apa pun di sini — termasuk helper internal seperti
--- app_config()/hash_password(), karena app_config() memuat PASSWORD_PEPPER.
--- Supabase secara default memberi EXECUTE ke anon & authenticated untuk
--- setiap fungsi baru, jadi harus dicabut eksplisit satu per satu di sini.
--- Catatan: blok ini menyapu SEMUA fungsi di schema public, jadi jalankan
--- file ini di project Supabase yang baru/khusus untuk aplikasi ini.
+-- HAK AKSES FUNGSI: hanya service_role (dipakai Edge Function). Default
+-- Supabase memberi EXECUTE ke anon/authenticated, jadi dicabut eksplisit
+-- (termasuk helper internal — app_config() memuat PASSWORD_PEPPER).
+-- Blok ini menyapu SEMUA fungsi aplikasi di schema public — jalankan file ini
+-- di project khusus aplikasi ini saja.
 -- =============================================================================
 do $$
 declare

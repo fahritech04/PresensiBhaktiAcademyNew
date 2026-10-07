@@ -19,12 +19,12 @@ const Auth = (() => {
 
   function logout() {
     localStorage.removeItem(APP_CONFIG.SESSION_KEY);
-    // Hapus juga sesi Supabase Auth (login Google) — supaya tidak auto-login
-    // lagi saat diarahkan ke /login/ (handleOAuthCallback baca sesi ini).
+    // Hapus juga sesi Supabase Auth (Google) supaya tidak auto-login.
     Object.keys(localStorage)
       .filter((k) => k.startsWith("sb-"))
       .forEach((k) => localStorage.removeItem(k));
     Api.clearCache();
+    if (typeof ApiGas !== "undefined") ApiGas.clearCache(); // cache monitoring (GAS)
     window.location.href = "/login/";
   }
 
@@ -46,14 +46,30 @@ const Auth = (() => {
     return null;
   }
 
+  let supabaseClientPromise = null;
+
+  /** Supabase client untuk login Google — satu instance bersama (memoized). */
+  function getSupabaseClient() {
+    if (!supabaseClientPromise) {
+      supabaseClientPromise = import("https://esm.sh/@supabase/supabase-js@2.45.4")
+        .then((mod) =>
+          mod.createClient(APP_CONFIG.SUPABASE_URL, APP_CONFIG.SUPABASE_ANON_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+          }),
+        )
+        .catch((err) => {
+          supabaseClientPromise = null;
+          throw new Error("Gagal memuat library login Google. Cek koneksi internet.");
+        });
+    }
+    return supabaseClientPromise;
+  }
+
   async function resolveOAuthToken() {
     const directToken = getOAuthAccessTokenFromUrl();
     if (directToken) return directToken;
     try {
-      const mod = await import("https://esm.sh/@supabase/supabase-js@2.45.4");
-      const client = mod.createClient(APP_CONFIG.SUPABASE_URL, APP_CONFIG.SUPABASE_ANON_KEY, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-      });
+      const client = await getSupabaseClient();
       const { data } = await client.auth.getSession();
       return (data && data.session && data.session.access_token) || null;
     } catch (e) {
@@ -86,9 +102,8 @@ const Auth = (() => {
   function guardPage() {
     if (isLoggedIn()) return;
     if (hasOAuthCallback()) {
-      // Callback OAuth bisa mendarat di halaman mana pun, termasuk root "/",
-      // kalau redirect_to tidak ada di daftar izin Supabase. Tokennya tetap di
-      // URL, jadi teruskan ke /login/ (penyhandlers) tanpa mengubah query/hash.
+      // Callback OAuth bisa mendarat di halaman mana pun — teruskan ke /login/
+      // tanpa mengubah query/hash (token tetap di URL).
       if (!isLoginPath()) {
         window.location.replace("/login/" + (window.location.search || "") + (window.location.hash || ""));
       }
@@ -136,6 +151,7 @@ const Auth = (() => {
     loginGoogle,
     hasOAuthCallback,
     getOAuthAccessTokenFromUrl,
+    getSupabaseClient,
     handleOAuthLogin,
   };
 })();

@@ -7,7 +7,7 @@
 
   --hardwood: #16587b;
   --hardwood-dk: #0d2e41;
-  --nav-background: linear-gradient(120deg, rgba(22, 64, 85, 0.98), rgba(9, 34, 49, 0.98));
+  --nav-background: linear-gradient(120deg, #164055, #092231);
   --teal: #16587b;
   --red: #e0402b;
   --orange-active: #f49f04;
@@ -619,8 +619,23 @@ textarea.input {
   margin-left: auto;
 }
 @media (min-width: 1200px) {
+  .topbar {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
   .topnav {
     display: flex;
+    flex: 1 1 100%;
+    order: 2;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    margin-left: 0;
+    padding: 8px 0 2px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .topnav a {
+    padding: 8px 11px;
   }
 }
 .topnav a {
@@ -655,11 +670,6 @@ textarea.input {
   align-items: center;
   gap: 10px;
   margin-left: auto;
-}
-@media (min-width: 1200px) {
-  .topbar-right {
-    margin-left: 0;
-  }
 }
 .user-chip {
   display: none;
@@ -1104,8 +1114,8 @@ body.nav-open {
   height: 100%;
   transform: rotate(-90deg);
 }
-/* Disco interno warna paper. Diameter 60% dari wrap — presis DANS inner edge
-   stroke ring (r52 - sw13) supaya text "Hadir" tidak mentok ring. */
+/* Lingkaran dalam warna paper, diameter 60% dari wrap — presisi di inner edge
+   stroke ring (r52 - sw13) supaya teks "Hadir" tidak mentok ring. */
 .ring-core {
   position: absolute;
   top: 50%;
@@ -2278,7 +2288,7 @@ table.tbl td.mono {
 }
 
 /* Kartu Putra vs Putri — warna berbeda supaya dibedakan dari jauh.
-   Override sisa variabel --ink (banda atas/border) & --paper (banda bawah). */
+   Override --ink (border atas) & --paper (border bawah). */
 .ticket-putra {
   --ink: #16587b;
   --paper: #f5eedd;
