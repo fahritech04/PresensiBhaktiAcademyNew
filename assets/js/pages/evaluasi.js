@@ -125,12 +125,13 @@
     tableBody.innerHTML = list
       .map((r) => {
         const done = !!evaluasiStatusMap.get(String(r.siswaId));
+        const ovInfo = r.overall > 0 ? levelInfo(r.overall) : null;
         return `
         <tr>
           <td><b>${UI.escapeHtml(r.namaSiswa)}</b></td>
           <td>${UI.escapeHtml(jenisKelaminMap.get(String(r.siswaId)) || "-")}</td>
           <td>${r.jumlahSesi}</td>
-          <td>${r.overall.toFixed(1)}</td>
+          <td><span class="pill-badge ${ovInfo ? `lvl-${ovInfo.lvl}` : "empty"}">${r.overall.toFixed(1)}</span></td>
           <td><span class="eval-status ${done ? "done" : "pending"}">${done ? "Sudah Dievaluasi" : "Belum Dievaluasi"}</span></td>
           <td><button type="button" class="btn btn-sm btn-ghost" data-open="${r.siswaId}">Lihat &amp; Evaluasi</button></td>
         </tr>`;
@@ -142,15 +143,25 @@
     });
   }
 
+  function levelInfo(val) {
+    if (val >= 4.5) return { lvl: 5, word: "Sangat Baik" };
+    if (val >= 3.5) return { lvl: 4, word: "Baik" };
+    if (val >= 2.5) return { lvl: 3, word: "Cukup" };
+    if (val >= 1.5) return { lvl: 2, word: "Kurang" };
+    return { lvl: 1, word: "Sangat Kurang" };
+  }
+
   function renderSkillBars(rataRata) {
     skillBarsRoot.innerHTML = SKILLS.map((s) => {
       const val = (rataRata && rataRata[s.key]) || 0;
       const pct = Math.max(0, Math.min(100, (val / 5) * 100));
+      const info = val > 0 ? levelInfo(val) : null;
       return `
-        <div class="skill-bar-row">
+        <div class="skill-bar-row${info ? ` lvl-${info.lvl}` : ""}">
           <span class="lbl">${UI.escapeHtml(s.label)}</span>
           <span class="skill-bar-track"><span class="skill-bar-fill" style="width:${pct}%"></span></span>
-          <span class="val">${val ? val.toFixed(1) : "-"}</span>
+          <span class="val pill-badge${info ? "" : " empty"}">${val ? val.toFixed(1) : "-"}</span>
+          <span class="status">${info ? info.word : "\u2013"}</span>
         </div>`;
     }).join("");
   }
