@@ -15,8 +15,9 @@ const ApiGas = (() => {
     getRekapEvaluasiBulanan: 60,
     getEvaluasiStatusBulanan: 60,
     getEvaluasi: 20,
+    getHonorBulanan: 60,
   };
-  const MUTATING_ACTIONS = new Set(["savePenilaian", "deletePenilaian", "saveEvaluasi"]);
+  const MUTATING_ACTIONS = new Set(["savePenilaian", "deletePenilaian", "saveEvaluasi", "saveHonor", "deleteHonor"]);
 
   function cacheGet(key, ttlSec) {
     try {

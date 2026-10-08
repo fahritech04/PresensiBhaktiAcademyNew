@@ -36,7 +36,7 @@ const APP_CONFIG = (() => {
     //           sederhana, bukan pengganti auth Supabase).
     // Setup: README.md "Backend Monitoring & Evaluasi".
     // ===========================================================================
-    GAS_URL: "https://script.google.com/macros/s/AKfycbwIudcq7HLGdzoYFmL7cpPme2oDE_c7A-eRpZlHvo4LNbffvbQStil_3SGHJUaKcVVtTg/exec",
+    GAS_URL: "https://script.google.com/macros/s/AKfycbwXjqercjkE3qv194JpVSv4FbwZNpaQ4tXZgzLZ8LLha9-c4GbyJsn4Zmi2P2q4tQJ0YA/exec",
     GAS_KEY: "9LGSz74meJHXxnaCTygjAtPRYfDKZsiQ",
 
     APP_NAME: "Bhakti Sebatung Academy",

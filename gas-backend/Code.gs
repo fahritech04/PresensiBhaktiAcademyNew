@@ -11,6 +11,7 @@
 
 const SHEET_PENILAIAN = "Penilaian";
 const SHEET_EVALUASI = "Evaluasi";
+const SHEET_HONOR = "Honor";
 
 // Urutan HARUS sama dengan kolom skor di sheet Penilaian (F..M) dan sinkron
 // dengan SKILLS di monitoring.js/evaluasi.js.
@@ -89,6 +90,15 @@ function doPost(e) {
         break;
       case "saveEvaluasi":
         data = saveEvaluasi(payload);
+        break;
+      case "getHonorBulanan":
+        data = getHonorBulanan(payload);
+        break;
+      case "saveHonor":
+        data = saveHonor(payload);
+        break;
+      case "deleteHonor":
+        data = deleteHonor(payload);
         break;
       default:
         throw new Error("Aksi tidak dikenali: " + action);
@@ -404,4 +414,132 @@ function saveEvaluasi(payload) {
   sh.appendRow([id].concat(values));
   invalidateCache(SHEET_EVALUASI);
   return { id };
+}
+
+/* -------------------------------- HONOR ---------------------------------- */
+// Kolom sheet Honor:
+// A:ID B:Bulan C:Tahun D:Nama E:Hadir F:Telat G:Total
+// H:TarifPerSesi I:TotalHonor J:StatusBayar K:DicatatOleh L:Timestamp
+// Kehadiran (Hadir/Telat/Total) datang dari Supabase (Riwayat Presensi Pelatih),
+// dikirim browser saat saveHonor — GAS hanya menyimpan + menghitung honor.
+
+function getHonorSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(SHEET_HONOR);
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_HONOR);
+    sh.appendRow(["ID", "Bulan", "Tahun", "Nama", "Hadir", "Telat", "Total", "TarifPerSesi", "TotalHonor", "StatusBayar", "DicatatOleh", "Timestamp"]);
+  }
+  return sh;
+}
+
+function readRowsDirect(sh) {
+  const values = sh.getDataRange().getValues();
+  if (!values || values.length <= 1) return [];
+  const headers = values.shift() || [];
+  return values.filter((r) => r.some((c) => c !== "" && c !== null)).map((r) => {
+    const o = {};
+    headers.forEach((h, i) => (o[h] = r[i]));
+    return o;
+  });
+}
+
+function getColVal(r, keys, fallback) {
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== "") {
+      return r[k];
+    }
+  }
+  const cleanKeys = keys.map((k) => String(k).toLowerCase().replace(/[^a-z0-9]/g, ""));
+  for (const prop in r) {
+    const cleanProp = String(prop).toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (cleanKeys.indexOf(cleanProp) > -1 && r[prop] !== undefined && r[prop] !== null && String(r[prop]).trim() !== "") {
+      return r[prop];
+    }
+  }
+  return fallback !== undefined ? fallback : "";
+}
+
+function mapHonorRow(r) {
+  const hadir = Number(getColVal(r, ["Hadir", "hadir"], 0)) || 0;
+  const telat = Number(getColVal(r, ["Telat", "telat"], 0)) || 0;
+  const totalVal = getColVal(r, ["Total", "total"], "");
+  const total = totalVal !== "" ? Number(totalVal) : hadir + telat;
+  const tarif = Math.max(0, Number(getColVal(r, ["TarifPerSesi", "Tarif / Sesi", "Tarif Per Sesi", "Tarif", "tarif"], 0)) || 0);
+  const statusBayar = String(getColVal(r, ["StatusBayar", "Status Bayar", "Status", "status"], "Belum")).trim() || "Belum";
+  const nama = String(getColVal(r, ["Nama", "Nama Pelatih", "nama"], "")).trim();
+  const id = String(getColVal(r, ["ID", "id", "Id"], ""));
+  const bulan = Number(getColVal(r, ["Bulan", "bulan"], 0)) || 0;
+  const tahun = Number(getColVal(r, ["Tahun", "tahun"], 0)) || 0;
+
+  return {
+    id,
+    bulan,
+    tahun,
+    nama,
+    hadir,
+    telat,
+    total,
+    tarifPerSesi: tarif,
+    totalHonor: total * tarif,
+    statusBayar: statusBayar === "Lunas" ? "Lunas" : "Belum",
+    dicatatOleh: String(getColVal(r, ["DicatatOleh", "dicatatOleh", "Dicatat Oleh"], "")),
+  };
+}
+
+function getHonorBulanan(payload) {
+  const { bulan, tahun } = payload;
+  if (!bulan || !tahun) throw new Error("bulan dan tahun wajib diisi.");
+  const sh = getHonorSheet();
+  const rows = readRowsDirect(sh);
+  return rows
+    .map(mapHonorRow)
+    .filter((r) => r.bulan === Number(bulan) && r.tahun === Number(tahun) && r.nama !== "")
+    .sort((a, b) => a.nama.localeCompare(b.nama, "id"));
+}
+
+/** Upsert honor 1 pelatih per (bulan, tahun, nama). Honor = total sesi × tarif. */
+function saveHonor(payload) {
+  const { bulan, tahun, nama } = payload;
+  if (!bulan || !tahun || !nama) throw new Error("bulan, tahun, dan nama wajib diisi.");
+  const cleanNama = String(nama).trim();
+  const hadir = Number(payload.hadir) || 0;
+  const telat = Number(payload.telat) || 0;
+  const total = hadir + telat;
+  const tarif = Math.max(0, Number(payload.tarifPerSesi) || 0);
+  const statusBayar = payload.statusBayar === "Lunas" ? "Lunas" : "Belum";
+  const now = new Date();
+
+  const sh = getHonorSheet();
+  const rows = readRowsDirect(sh).map(mapHonorRow);
+  const existing = rows.find(
+    (r) => r.bulan === Number(bulan) && r.tahun === Number(tahun) && r.nama.toLowerCase() === cleanNama.toLowerCase(),
+  );
+
+  const values = [Number(bulan), Number(tahun), cleanNama, hadir, telat, total, tarif, total * tarif, statusBayar, payload.dicatatOleh || "Admin", now];
+
+  if (existing && existing.id) {
+    const rowIdx = findRowIndexById(sh, existing.id);
+    if (rowIdx > -1) {
+      sh.getRange(rowIdx, 2, 1, 11).setValues([values]);
+      invalidateCache(SHEET_HONOR);
+      return { id: existing.id };
+    }
+  }
+
+  const id = newId("HON");
+  sh.appendRow([id].concat(values));
+  invalidateCache(SHEET_HONOR);
+  return { id };
+}
+
+function deleteHonor(payload) {
+  if (!payload.id) throw new Error("id wajib diisi.");
+  const sh = getHonorSheet();
+  const rowIdx = findRowIndexById(sh, payload.id);
+  if (rowIdx === -1) throw new Error("Data honor tidak ditemukan (mungkin sudah dihapus).");
+  sh.deleteRow(rowIdx);
+  invalidateCache(SHEET_HONOR);
+  return { deleted: true };
 }

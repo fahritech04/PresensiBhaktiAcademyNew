@@ -53,6 +53,7 @@ bhakti-basketball-attendance/
 ├── evaluasi/index.html       # Evaluasi bulanan per siswa
 ├── pelatih/index.html        # CRUD data pelatih
 ├── presensi-pelatih/index.html # Riwayat presensi pelatih
+├── honor-pelatih/index.html   # Honor pelatih dari kehadiran (backend GAS)
 ├── qr-pelatih/index.html     # Kode QR login pelatih
 ├── maintenance.html          # Halaman pemeliharaan (opsional)
 ├── gas-backend/
@@ -105,12 +106,13 @@ bhakti-basketball-attendance/
   select reset_admin('admin', 'password-baru-kamu');
   ```
 
-### B. Backend Monitoring & Evaluasi (Google Apps Script)
+### B. Backend Monitoring, Evaluasi & Honor Pelatih (Google Apps Script)
 
-Fitur Monitoring & Evaluasi **terpisah total dari Supabase** — datanya di Google
-Spreadsheet, dipanggil lewat Web App GAS. Template spreadsheet siap pakai:
+Fitur Monitoring, Evaluasi, dan Honor **terpisah total dari Supabase** — datanya di
+Google Spreadsheet, dipanggil lewat Web App GAS. Template spreadsheet siap pakai:
 `gas-backend/Sistem_Monitoring_Latihan_Basket.xlsx` (2 sheet: `Penilaian` 17 kolom,
-`Evaluasi` 11 kolom — struktur persis kontrak `Code.gs`).
+`Evaluasi` 11 kolom — struktur persis kontrak `Code.gs`). Sheet `Honor` **dibuat
+otomatis** oleh `Code.gs` saat pertama dipakai.
 
 1. Upload `.xlsx` ke Google Drive, buka dengan Google Sheets (auto-convert).
 2. **Extensions → Apps Script** → hapus isi `Code.gs` default → tempel seluruh isi
@@ -168,6 +170,13 @@ menampilkan **Jenis Kelamin** (di-join dari Supabase).
 Pilih Bulan/Tahun → status seluruh siswa aktif otomatis **Belum Bayar** sampai
 ditandai Lunas. Edit/batalkan lewat ikon. Ringkasan tampil di Dashboard.
 
+### Honor Pelatih
+Khusus **Admin**. Pilih Bulan/Tahun → jumlah Hadir/Telat/Total tiap pelatih diambil
+dari **Riwayat Presensi Pelatih (Supabase)**, lalu dihitung honor = total sesi × tarif.
+Isi **Tarif/Sesi** per pelatih dan simpan; tandai **Lunas** bila sudah dibayar.
+Datanya disimpan di Google Spreadsheet (sheet `Honor`) lewat GAS — kehadiran tetap
+satu sumber di Supabase (bukan diduplikasi manual).
+
 ### Cetak Kode QR
 Pilih siswa (bisa banyak), cetak kartu *player ticket card* berisi QR.
 
@@ -191,8 +200,8 @@ Semua akses frontend lewat Edge Function yang memanggil fungsi `rpc_*`
 > `iuran`: TIDAK ADA baris = **Belum Bayar**. Baris dibuat sistem saat admin menandai
 > Lunas.
 
-> `monitoring` & `evaluasi` TIDAK ada di Supabase — hidup di Google Spreadsheet
-> (sheet `Penilaian` & `Evaluasi`), snapshot nama/kelompok saat diisi.
+> `monitoring`, `evaluasi`, & `honor` TIDAK ada di Supabase — hidup di Google
+> Spreadsheet (sheet `Penilaian`, `Evaluasi`, `Honor`), snapshot nama/kelompok saat diisi.
 
 ---
 

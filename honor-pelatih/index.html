@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Honor Pelatih &middot; Bhakti Sebatung Academy</title>
+    <script src="/assets/js/core/head.js?v=20260923-3"></script>
+    <link rel="stylesheet" href="/assets/css/style.css?v=20261007-2" />
+    <style>
+      .honor-tarif {
+        max-width: 130px;
+      }
+      .honor-status {
+        max-width: 120px;
+      }
+      .num-currency {
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div id="topbar-root"></div>
+
+      <main class="view" id="mainContent" tabindex="-1">
+        <div class="view-head" id="viewHead"></div>
+
+        <div class="stats-grid section-gap">
+          <div class="num-tile tone-teal">
+            <div class="label">Total Honor</div>
+            <div class="num num-currency" id="statTotal">&ndash;</div>
+            <div class="foot" id="statTotalFoot">Bulan ini</div>
+          </div>
+          <div class="num-tile tone-orange">
+            <div class="label">Sudah Dibayar</div>
+            <div class="num" id="statLunas">&ndash;</div>
+            <div class="foot">Pelatih berstatus Lunas</div>
+          </div>
+          <div class="num-tile tone-red">
+            <div class="label">Belum Dibayar</div>
+            <div class="num" id="statBelum">&ndash;</div>
+            <div class="foot">Pelatih belum dibayar</div>
+          </div>
+        </div>
+
+        <div class="card data-card">
+          <div class="card-body">
+            <div class="toolbar filter-toolbar">
+              <div class="field mb-0">
+                <label for="filterBulan">Bulan</label>
+                <select class="input" id="filterBulan"></select>
+              </div>
+              <div class="field mb-0">
+                <label for="filterTahun">Tahun</label>
+                <select class="input" id="filterTahun"></select>
+              </div>
+            </div>
+          </div>
+          <div class="card-body pad-0">
+            <p class="table-hint no-print">Kehadiran diambil dari Riwayat Presensi Pelatih. Isi tarif per sesi lalu simpan untuk menghitung honor.</p>
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Tabel honor pelatih">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th scope="col">Nama Pelatih</th>
+                    <th scope="col">Hadir</th>
+                    <th scope="col">Telat</th>
+                    <th scope="col">Total</th>
+                    <th scope="col">Tarif / Sesi</th>
+                    <th scope="col">Total Honor</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+            <div id="emptyState" class="empty-state hidden">
+              <h3 id="emptyTitle">Belum ada kehadiran pelatih</h3>
+              <p id="emptyDesc">Belum ada presensi pelatih pada bulan ini.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div id="nav-root"></div>
+    </div>
+
+    <script src="/assets/js/core/config.js?v=20260927-2" defer></script>
+    <script src="/assets/js/core/api.js?v=20260927-1" defer></script>
+    <script src="/assets/js/core/api-gas.js?v=20261008-1" defer></script>
+    <script src="/assets/js/core/auth.js?v=20261007-1" defer></script>
+    <script src="/assets/js/core/ui.js?v=20261008-1" defer></script>
+    <script src="/assets/js/pages/honor-pelatih.js?v=20261008-2" defer></script>
+  </body>
+</html>

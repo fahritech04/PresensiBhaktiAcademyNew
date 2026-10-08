@@ -45,6 +45,7 @@ const UI = (() => {
     { key: "cetak", href: "/cetak-barcode/", label: "Cetak QR", icon: ICONS.cetak, adminOnly: true },
     { key: "pelatih", href: "/pelatih/", label: "Pelatih", icon: ICONS.pelatih, adminOnly: true },
     { key: "presensi-pelatih", href: "/presensi-pelatih/", label: "Riwayat Pelatih", icon: ICONS.history, adminOnly: true },
+    { key: "honor-pelatih", href: "/honor-pelatih/", label: "Honor", icon: ICONS.wallet, adminOnly: true },
     { key: "qr-pelatih", href: "/qr-pelatih/", label: "Kode QR Saya", icon: ICONS.cetak, pelatihOnly: true },
   ];
 
