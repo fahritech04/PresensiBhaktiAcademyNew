@@ -270,13 +270,23 @@ function savePenilaian(payload) {
   const rataRata = avgSkor(payload.skor);
   const now = new Date();
 
+  const tanggal = String(payload.tanggal).slice(0, 10);
+  const raw = sh.getDataRange().getValues();
   let id = payload.id || "";
-  let rowIdx = payload.id ? findRowIndexById(sh, payload.id) : -1;
+  let rowIdx = -1;
+
+  if (payload.id) {
+    for (let i = 1; i < raw.length; i++) {
+      if (String(raw[i][0]) === String(payload.id)) { rowIdx = i + 1; break; }
+    }
+  }
   if (rowIdx === -1) {
-    const dup = readRows(sh).find((r) => fmtDate(r.Tanggal) === String(payload.tanggal).slice(0, 10) && String(r.SiswaID) === String(payload.siswaId));
-    if (dup) {
-      rowIdx = findRowIndexById(sh, dup.ID);
-      id = dup.ID;
+    for (let i = 1; i < raw.length; i++) {
+      if (fmtDate(raw[i][1]) === tanggal && String(raw[i][2]) === String(payload.siswaId)) {
+        rowIdx = i + 1;
+        id = raw[i][0];
+        break;
+      }
     }
   }
 
@@ -388,7 +398,17 @@ function saveEvaluasi(payload) {
 
   const sh = getSheet(SHEET_EVALUASI);
   const now = new Date();
-  const existing = readRows(sh).find((r) => String(r.SiswaID) === String(siswaId) && Number(r.Bulan) === Number(bulan) && Number(r.Tahun) === Number(tahun));
+  const raw = sh.getDataRange().getValues();
+  let rowIdx = -1;
+  let existingId = "";
+
+  for (let i = 1; i < raw.length; i++) {
+    if (String(raw[i][3]) === String(siswaId) && Number(raw[i][1]) === Number(bulan) && Number(raw[i][2]) === Number(tahun)) {
+      rowIdx = i + 1;
+      existingId = raw[i][0];
+      break;
+    }
+  }
 
   const values = [
     bulan,
@@ -403,11 +423,10 @@ function saveEvaluasi(payload) {
     now,
   ];
 
-  if (existing) {
-    const rowIdx = findRowIndexById(sh, existing.ID);
+  if (rowIdx > -1) {
     sh.getRange(rowIdx, 2, 1, 10).setValues([values]);
     invalidateCache(SHEET_EVALUASI);
-    return { id: existing.ID };
+    return { id: existingId };
   }
 
   const id = newId("EV");
@@ -431,17 +450,6 @@ function getHonorSheet() {
     sh.appendRow(["ID", "Bulan", "Tahun", "Nama", "Hadir", "Telat", "Total", "TarifPerSesi", "TotalHonor", "StatusBayar", "DicatatOleh", "Timestamp"]);
   }
   return sh;
-}
-
-function readRowsDirect(sh) {
-  const values = sh.getDataRange().getValues();
-  if (!values || values.length <= 1) return [];
-  const headers = values.shift() || [];
-  return values.filter((r) => r.some((c) => c !== "" && c !== null)).map((r) => {
-    const o = {};
-    headers.forEach((h, i) => (o[h] = r[i]));
-    return o;
-  });
 }
 
 function getColVal(r, keys, fallback) {
@@ -492,7 +500,7 @@ function getHonorBulanan(payload) {
   const { bulan, tahun } = payload;
   if (!bulan || !tahun) throw new Error("bulan dan tahun wajib diisi.");
   const sh = getHonorSheet();
-  const rows = readRowsDirect(sh);
+  const rows = readRows(sh);
   return rows
     .map(mapHonorRow)
     .filter((r) => r.bulan === Number(bulan) && r.tahun === Number(tahun) && r.nama !== "")
@@ -512,7 +520,7 @@ function saveHonor(payload) {
   const now = new Date();
 
   const sh = getHonorSheet();
-  const rows = readRowsDirect(sh).map(mapHonorRow);
+  const rows = readRows(sh).map(mapHonorRow);
   const existing = rows.find(
     (r) => r.bulan === Number(bulan) && r.tahun === Number(tahun) && r.nama.toLowerCase() === cleanNama.toLowerCase(),
   );
