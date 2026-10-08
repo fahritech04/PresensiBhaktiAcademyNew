@@ -61,6 +61,7 @@ const PELATIH_ACTIONS = new Set([
   "getPelatihList",
   "getDashboardStats",
   "getPelatihSelf",
+  "logout",
 ]);
 
 // Burst limiter memory (best-effort; layer final di database).
@@ -102,7 +103,7 @@ function orNull(v: unknown) {
   return v === undefined || v === "" ? null : v;
 }
 
-type Handler = (payload: any, session: any) => Promise<unknown>;
+type Handler = (payload: any, session: any, token: string | null) => Promise<unknown>;
 
 // Peta action → rpc Postgres. Nama action & payload SAMA PERSIS dengan frontend.
 const ACTIONS: Record<string, Handler> = {
@@ -240,6 +241,8 @@ const ACTIONS: Record<string, Handler> = {
       p_sampai: orNull(p.sampai),
       p_status: orNull(p.status),
     }),
+
+  logout: (_p, _session, token) => call("rpc_logout", { p_token: token || "" }),
 };
 
 // IP request berjalan (per-isolate request berproses sequential, aman).
@@ -290,7 +293,7 @@ Deno.serve(async (req) => {
       return jsonError(req, "Terlalu banyak percobaan. Coba lagi dalam beberapa menit.", "RATE_LIMITED");
     }
 
-    const result = await handler(payload, session);
+    const result = await handler(payload, session, token);
     return jsonSuccess(req, result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "";

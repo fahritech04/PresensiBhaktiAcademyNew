@@ -234,6 +234,20 @@ end;
 $$;
 
 -- =============================================================================
+-- 6b) RPC LOGOUT — hapus sesi berdasarkan token
+-- =============================================================================
+create or replace function rpc_logout(p_token text)
+returns boolean language plpgsql as $$
+begin
+  if p_token is null or p_token = '' then
+    return false;
+  end if;
+  delete from sessions where token_hash = encode(digest(p_token, 'sha256'), 'hex');
+  return found;
+end;
+$$;
+
+-- =============================================================================
 -- 7) HAK AKSES: revoke anon/authenticated, hanya service_role yang boleh
 --    panggil fungsi aplikasi (ikut pola schema.sql).
 -- =============================================================================

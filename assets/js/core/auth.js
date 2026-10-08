@@ -17,7 +17,15 @@ const Auth = (() => {
     return !!getSession();
   }
 
-  function logout() {
+  async function logout() {
+    const session = getSession();
+    if (session && session.token) {
+      try {
+        await Api.call("logout", {});
+      } catch (e) {
+        // ignore errors (offline or server error) — client session tetap kita hapus
+      }
+    }
     localStorage.removeItem(APP_CONFIG.SESSION_KEY);
     // Hapus juga sesi Supabase Auth (Google) supaya tidak auto-login.
     Object.keys(localStorage)
