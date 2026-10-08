@@ -219,8 +219,9 @@ Semua akses frontend lewat Edge Function yang memanggil fungsi `rpc_*`
 - Backend logic utama hidup di **Postgres** (`rpc_*` di `supabase/schema.sql`);
   Edge Function hanya router. Kontrak: `POST { action, token, payload }` →
   `{ ok, data }`.
-- Asset pakai penanda rilis `?v=...` — saat deploy perubahan, naikkan penanda pada
-  setiap referensi asset yang berubah.
+- Asset pakai cache-busting otomatis `?v=<hash>` via `assets/js/core/bust.js`.
+  Otomatis berjalan lewat Git pre-commit hook setiap kali `git commit`, atau bisa
+  dijalankan manual: `node assets/js/core/bust.js`. Hash hanya berubah jika konten file berubah.
 
 ---
 

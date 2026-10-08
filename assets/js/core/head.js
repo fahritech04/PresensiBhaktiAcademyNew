@@ -28,7 +28,7 @@
   });
 
   // Favicon — 1 tempat simpan. ?v= cache-buster: naikkan VCACHE saat rilis.
-  const VCACHE = "20260923-1";
+  const VCACHE = "fe3ec19f";
   [
     { rel: "icon", type: "image/png", href: `/assets/favicon/favicon-96x96.png?v=${VCACHE}`, sizes: "96x96" },
     { rel: "icon", type: "image/svg+xml", href: `/assets/favicon/favicon.svg?v=${VCACHE}` },
