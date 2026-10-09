@@ -1,6 +1,9 @@
 (async function () {
   UI.renderPage({ active: "dashboard", title: "Dashboard", desc: "Ringkasan Tampilan Presensi", allowPublic: true });
 
+  let trendTip = null,
+    trendTipTimer = null;
+
   const session = Auth.getSession();
   const isPublic = !session;
   const isPelatih = !!(session && session.role === "Pelatih");
@@ -63,38 +66,82 @@
       box.innerHTML = '<div class="empty-state"><h3>Belum ada data</h3><p>Grafik akan muncul setelah ada riwayat presensi.</p></div>';
       return;
     }
+    const plotH = 140;
     const max = Math.max(1, ...rows.map((r) => (r.hadir || 0) + (r.telat || 0)));
-    const barW = 30,
-      gap = 20,
-      chartH = 140;
-    const width = rows.length * (barW + gap);
 
-    let bars = "";
-    rows.forEach((r, i) => {
-      const total = (r.hadir || 0) + (r.telat || 0);
-      const hHadir = total ? (r.hadir / max) * chartH : 0;
-      const hTelat = total ? (r.telat / max) * chartH : 0;
-      const x = i * (barW + gap) + gap / 2;
-      const yTelat = chartH - hTelat;
-      const yHadir = yTelat - hHadir;
-      const label = UI.formatTanggal(r.tanggal).slice(0, 6);
-      bars += `
-        <g>
-          <rect x="${x}" y="${yHadir}" width="${barW}" height="${Math.max(hHadir, 0)}" fill="#1E8F76"></rect>
-          <rect x="${x}" y="${yTelat}" width="${barW}" height="${Math.max(hTelat, 0)}" fill="#E0402B"></rect>
-          <rect x="${x}" y="${yHadir}" width="${barW}" height="${Math.max(hHadir + hTelat, 0)}" fill="none" stroke="#14181F" stroke-width="1.5"></rect>
-          <text x="${x + barW / 2}" y="${chartH + 16}" text-anchor="middle" font-size="9.5" fill="#6B7280" font-family="Space Mono, monospace">${label}</text>
-        </g>`;
-    });
+    const bars = rows
+      .map((r, i) => {
+        const hadir = r.hadir || 0;
+        const telat = r.telat || 0;
+        const hHadir = hadir > 0 ? Math.max(4, Math.round((hadir / max) * plotH)) : 0;
+        const hTelat = telat > 0 ? Math.max(4, Math.round((telat / max) * plotH)) : 0;
+        const short = UI.formatTanggal(r.tanggal).slice(0, 6);
+        const full = UI.formatTanggal(r.tanggal, true);
+        const delay = i * 60;
+        const seg =
+          (hTelat > 0 ? `<span class="bar-seg seg-telat" style="height:${hTelat}px;animation-delay:${delay}ms"></span>` : "") +
+          (hHadir > 0 ? `<span class="bar-seg seg-hadir" style="height:${hHadir}px;animation-delay:${delay + 40}ms"></span>` : "");
+        return `
+        <div class="trend-bar" tabindex="0" role="img"
+             aria-label="${full}: hadir ${hadir}, telat ${telat}"
+             data-tip-label="${full}" data-tip-hadir="${hadir}" data-tip-telat="${telat}">
+          <div class="bar-stack">${seg}</div>
+          <span class="trend-xlabel">${short}</span>
+        </div>`;
+      })
+      .join("");
 
     box.innerHTML = `
-      <div class="flex items-center gap-12" style="margin-bottom:10px;">
-        <span class="tag tag-hadir">Hadir</span>
-        <span class="tag tag-telat">Telat</span>
+      <div class="trend-legend">
+        <span class="legend-item"><i class="dot dot-hadir"></i>Hadir</span>
+        <span class="legend-item"><i class="dot dot-telat"></i>Telat</span>
       </div>
-      <div style="overflow-x:auto;">
-        <svg viewBox="0 0 ${width} ${chartH + 26}" width="${Math.max(width, 300)}" height="${chartH + 26}">${bars}</svg>
+      <div class="trend-scroll">
+        <div class="trend-plot">${bars}</div>
       </div>`;
+
+    box.querySelectorAll(".bar-seg").forEach((el) => el.classList.add("grow"));
+    bindTrendTooltip(box.querySelector(".trend-scroll"));
+  }
+
+  /* Tooltip tunggal (fixed) supaya tidak terpotong container scroll. */
+  function bindTrendTooltip(scroller) {
+    if (!scroller) return;
+    if (!trendTip) {
+      trendTip = document.createElement("div");
+      trendTip.className = "trend-tip";
+      trendTip.setAttribute("role", "tooltip");
+      document.body.appendChild(trendTip);
+    }
+    const show = (bar) => {
+      clearTimeout(trendTipTimer);
+      const rect = bar.querySelector(".bar-stack").getBoundingClientRect();
+      trendTip.innerHTML = `<strong>${bar.dataset.tipLabel}</strong>Hadir <b>${bar.dataset.tipHadir}</b> &middot; Telat <b>${bar.dataset.tipTelat}</b>`;
+      trendTip.style.left = `${rect.left + rect.width / 2}px`;
+      trendTip.style.top = `${rect.top}px`;
+      trendTip.classList.add("is-show");
+    };
+    const hide = () => {
+      trendTipTimer = setTimeout(() => trendTip.classList.remove("is-show"), 60);
+    };
+    const fromEvent = (e) => (e.target.closest(".trend-bar") || null);
+
+    scroller.addEventListener("mouseover", (e) => {
+      const bar = fromEvent(e);
+      if (bar) show(bar);
+    });
+    scroller.addEventListener("mouseout", (e) => {
+      const bar = fromEvent(e);
+      const next = e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest(".trend-bar") : null;
+      if (bar && bar !== next) hide();
+    });
+    scroller.addEventListener("focusin", (e) => {
+      const bar = fromEvent(e);
+      if (bar) show(bar);
+    });
+    scroller.addEventListener("focusout", hide);
+    scroller.addEventListener("scroll", hide, { passive: true });
+    window.addEventListener("resize", hide);
   }
 
   function renderTodayTable(rows) {
